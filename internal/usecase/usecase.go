@@ -3,12 +3,21 @@ package usecase
 import (
 	"bernard/internal/config"
 	"log/slog"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type Storage interface {
+}
+
 type UseCase struct {
-	config config.Config
+	config *config.Config
 	log    *slog.Logger
-	db     *pgxpool.Pool
+	db     Storage
+}
+
+func New(config *config.Config, db Storage, log *slog.Logger) *UseCase {
+	return &UseCase{
+		config: config,
+		log:    log,
+		db:     db,
+	}
 }
