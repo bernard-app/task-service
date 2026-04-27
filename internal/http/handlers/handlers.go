@@ -3,7 +3,9 @@ package handlers
 import (
 	"bernard/internal/domain/entity"
 	"context"
+	"fmt"
 	"log/slog"
+	"net/http"
 
 	"github.com/google/uuid"
 )
@@ -31,4 +33,15 @@ type Handlers struct {
 
 func New(useCase UseCase, log *slog.Logger) *Handlers {
 	return &Handlers{useCase: useCase, log: log}
+}
+
+func GetUserID(r *http.Request) (uuid.UUID, error) {
+	const op = "GetUserID"
+
+	userID, err := uuid.Parse(r.Header.Get("X-User-ID"))
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("op: %s, error parsing user id: %w", op, err)
+	}
+
+	return userID, nil
 }

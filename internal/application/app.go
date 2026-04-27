@@ -11,7 +11,6 @@ import (
 )
 
 type Application struct {
-	ctx       context.Context
 	cfg       *config.Config
 	log       *slog.Logger
 	container *dicontainer.Container
@@ -19,9 +18,8 @@ type Application struct {
 	wg        *sync.WaitGroup
 }
 
-func NewApplication(ctx context.Context, cfg *config.Config, log *slog.Logger) *Application {
+func NewApplication(cfg *config.Config, log *slog.Logger) *Application {
 	return &Application{
-		ctx:       ctx,
 		cfg:       cfg,
 		log:       log,
 		container: dicontainer.NewContainer(log, cfg),
@@ -29,15 +27,15 @@ func NewApplication(ctx context.Context, cfg *config.Config, log *slog.Logger) *
 	}
 }
 
-func (a *Application) MustRun() {
-	err := a.Run()
+func (a *Application) MustRun(ctx context.Context) {
+	err := a.Run(ctx)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (a *Application) Run() error {
-	err := a.container.Init(a.ctx)
+func (a *Application) Run(ctx context.Context) error {
+	err := a.container.Init(ctx)
 	if err != nil {
 		a.log.Error("failed to init dependencies dicontainer", "error", err)
 		return err

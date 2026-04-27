@@ -43,7 +43,7 @@ func (c *Container) Init(ctx context.Context) error {
 
 	c.HTTPHandlers = handlers.New(c.UseCase, c.Log)
 
-	router.Router(ctx, c.HTTPRouter, c.HTTPHandlers, c.Log)
+	router.Router(c.HTTPRouter, c.HTTPHandlers, c.Log)
 
 	return nil
 }
