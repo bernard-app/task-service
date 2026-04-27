@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -127,8 +128,9 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 		var gName *string
 
 		var tID, tGroupID *int64
-		var tName, tDesc, tTags, tStatus, tStartTime, tDeadline, tCreatedAt, tUpdatedAt *string
+		var tName, tDesc, tTags, tStatus *string
 		var tPriority *int
+		var tStartTime, tDeadline, tCreatedAt, tUpdatedAt *time.Time
 
 		err = rows.Scan(
 			&project.ID, &project.Name, &project.Description, &project.UserID,

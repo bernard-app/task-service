@@ -12,6 +12,13 @@ const (
 	EnvProd  = "prod"
 )
 
+const (
+	None = iota
+	Tag
+	Priority
+	Date
+)
+
 type Task struct {
 	ID          int64     `json:"id"`
 	Name        string    `json:"name"`
@@ -49,4 +56,20 @@ type User struct {
 	Username    string    `json:"username"`
 	DisplayName string    `json:"display_name"`
 	Email       string    `json:"email"`
+}
+
+type UserTasksTab struct {
+	Task        Task   `json:"task"`
+	GroupName   string `json:"group_name"`
+	ProjectName string `json:"project_name"`
+	ProjectID   int64  `json:"project_id"`
+}
+
+type TasksFilter struct {
+	UserID     uuid.UUID
+	FilterType int
+	Priority   int
+	Tag        string
+	From       time.Time
+	To         time.Time
 }

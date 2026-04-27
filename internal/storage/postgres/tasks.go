@@ -12,13 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type UserTasksTab struct {
-	Task        entity.Task `json:"task"`
-	GroupName   string      `json:"group_name"`
-	ProjectName string      `json:"project_name"`
-	ProjectID   int64       `json:"project_id"`
-}
-
 func (s *Storage) CreateTask(ctx context.Context, task entity.Task) (*entity.Task, error) {
 	const op = "storage.CreateTask"
 
@@ -119,7 +112,7 @@ func (s *Storage) GetTask(ctx context.Context, id int64) (*entity.Task, error) {
 	return task, nil
 }
 
-func (s *Storage) ListTasks(ctx context.Context, userID uuid.UUID) ([]*UserTasksTab, error) {
+func (s *Storage) ListTasks(ctx context.Context, userID uuid.UUID) ([]*entity.UserTasksTab, error) {
 	const op = "storage.ListTasks"
 
 	query, args, err := sq.
@@ -147,7 +140,7 @@ func (s *Storage) ListTasks(ctx context.Context, userID uuid.UUID) ([]*UserTasks
 	return tasks, nil
 }
 
-func (s *Storage) GetTasksByPriority(ctx context.Context, userID uuid.UUID, priority int) ([]*UserTasksTab, error) {
+func (s *Storage) GetTasksByPriority(ctx context.Context, userID uuid.UUID, priority int) ([]*entity.UserTasksTab, error) {
 	const op = "storage.GetTasksByPriority"
 
 	query, args, err := sq.
@@ -175,7 +168,7 @@ func (s *Storage) GetTasksByPriority(ctx context.Context, userID uuid.UUID, prio
 	return tasks, nil
 }
 
-func (s *Storage) GetTasksByDate(ctx context.Context, userID uuid.UUID, from, to time.Time) ([]*UserTasksTab, error) {
+func (s *Storage) GetTasksByDate(ctx context.Context, userID uuid.UUID, from, to time.Time) ([]*entity.UserTasksTab, error) {
 	const op = "storage.GetTasksByDate"
 
 	query, args, err := sq.
@@ -205,7 +198,7 @@ func (s *Storage) GetTasksByDate(ctx context.Context, userID uuid.UUID, from, to
 	return tasks, nil
 }
 
-func (s *Storage) GetTasksByTag(ctx context.Context, userID uuid.UUID, tag string) ([]*UserTasksTab, error) {
+func (s *Storage) GetTasksByTag(ctx context.Context, userID uuid.UUID, tag string) ([]*entity.UserTasksTab, error) {
 	const op = "storage.GetTasksByTag"
 
 	query, args, err := sq.
@@ -236,7 +229,7 @@ func (s *Storage) GetTasksByTag(ctx context.Context, userID uuid.UUID, tag strin
 	return tasks, nil
 }
 
-func getTasks(DB *pgxpool.Pool, ctx context.Context, query string, args []interface{}) ([]*UserTasksTab, error) {
+func getTasks(DB *pgxpool.Pool, ctx context.Context, query string, args []interface{}) ([]*entity.UserTasksTab, error) {
 	const op = "storage.GetTasks"
 
 	rows, err := DB.Query(ctx, query, args...)
@@ -245,10 +238,10 @@ func getTasks(DB *pgxpool.Pool, ctx context.Context, query string, args []interf
 	}
 	defer rows.Close()
 
-	var tasks []*UserTasksTab
+	var tasks []*entity.UserTasksTab
 
 	for rows.Next() {
-		var task UserTasksTab
+		var task entity.UserTasksTab
 
 		err = rows.Scan(
 			&task.Task.ID, &task.Task.Name, &task.Task.Description, &task.Task.Priority, &task.Task.Status, &task.Task.StartTime, &task.Task.Deadline, &task.Task.GroupID, &task.Task.UserID, &task.Task.CreatedAt, &task.Task.UpdatedAt,
