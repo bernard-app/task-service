@@ -73,3 +73,9 @@ type TasksFilter struct {
 	From       time.Time
 	To         time.Time
 }
+
+type ErrorResponse struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Details interface{} `json:"details,omitempty"`
+}

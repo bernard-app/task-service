@@ -1,0 +1,542 @@
+definitions:
+  entity.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      details: {}
+      message:
+        type: string
+    type: object
+  entity.Group:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      project_id:
+        type: integer
+      task_count:
+        type: integer
+      tasks:
+        items:
+          $ref: '#/definitions/entity.Task'
+        type: array
+    type: object
+  entity.Project:
+    properties:
+      description:
+        type: string
+      groups:
+        items:
+          $ref: '#/definitions/entity.Group'
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      task_count:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  entity.Task:
+    properties:
+      created_at:
+        type: string
+      deadline:
+        type: string
+      description:
+        type: string
+      group_id:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      priority:
+        type: integer
+      start_time:
+        type: string
+      status:
+        type: string
+      tags:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/groups/:
+    post:
+      description: gets userID from header
+      parameters:
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Group data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Group'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Create new group
+      tags:
+      - groups
+  /api/v1/groups/{id}:
+    delete:
+      description: deletes group from project
+      parameters:
+      - description: GroupID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Delete group
+      tags:
+      - groups
+    put:
+      description: updates group information
+      parameters:
+      - description: GroupID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Group data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Group'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Update group
+      tags:
+      - groups
+  /api/v1/projects/:
+    get:
+      description: get user's projects with limit and offset
+      parameters:
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Get user projects
+      tags:
+      - projects
+    post:
+      description: creates new user project
+      parameters:
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Project data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Project'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Create new project
+      tags:
+      - projects
+  /api/v1/projects/{id}:
+    delete:
+      description: delete user's project
+      parameters:
+      - description: ProjectID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Delete project
+      tags:
+      - projects
+    get:
+      description: get user's specific project with groups and tasks
+      parameters:
+      - description: ProjectID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Get user project-tree
+      tags:
+      - projects
+    put:
+      description: updates user's project information
+      parameters:
+      - description: ProjectID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Project data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Project'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Update project
+      tags:
+      - projects
+  /api/v1/tasks/:
+    get:
+      description: gets user's tasks with optionals filters
+      parameters:
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Task priority
+        in: query
+        name: priority
+        type: integer
+      - description: Task tag
+        in: query
+        name: tag
+        type: string
+      - description: Task from param
+        in: query
+        name: from
+        type: string
+      - description: Task to param
+        in: query
+        name: to
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Get list of tasks
+      tags:
+      - tasks
+    post:
+      description: creates new user task
+      parameters:
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Task data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Task'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Create new task
+      tags:
+      - tasks
+  /api/v1/tasks/{id}:
+    delete:
+      description: deletes user's task
+      parameters:
+      - description: TaskID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Delete task
+      tags:
+      - tasks
+    get:
+      description: gets user's task
+      parameters:
+      - description: TaskID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Get task
+      tags:
+      - tasks
+    put:
+      description: updates user's task
+      parameters:
+      - description: TaskID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Authorized user ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Task data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Task'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.ErrorResponse'
+      summary: Update task
+      tags:
+      - tasks
+swagger: "2.0"

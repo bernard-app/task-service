@@ -53,7 +53,7 @@ func (a *Application) Run(ctx context.Context) error {
 
 	go func() {
 		defer a.wg.Done()
-		a.log.Info("Run: server started")
+		a.log.Info("Run: server started", "address", a.cfg.HTTPServer.Address)
 
 		err = a.server.ListenAndServe()
 		if err != nil {
