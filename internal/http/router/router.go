@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 func Router(router *chi.Mux, http *handlers.Handlers, log *slog.Logger) {
@@ -48,4 +49,8 @@ func Router(router *chi.Mux, http *handlers.Handlers, log *slog.Logger) {
 			})
 		})
 	})
+
+	router.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8089/swagger/doc.json"),
+	))
 }

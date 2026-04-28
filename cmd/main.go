@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	_ "bernard/docs"
 )
 
 func main() {
@@ -16,9 +18,9 @@ func main() {
 
 	log := logger.SetupLogger(cfg.Env)
 
-	app := application.NewApplication(ctx, cfg, log)
+	app := application.NewApplication(cfg, log)
 
-	app.MustRun()
+	app.MustRun(ctx)
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)

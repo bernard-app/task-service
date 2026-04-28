@@ -3,7 +3,6 @@ package usecase
 import (
 	"bernard/internal/domain/entity"
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 )
@@ -63,33 +62,35 @@ func (u *UseCase) GetListTask(ctx context.Context, tasksFilter entity.TasksFilte
 	var err error
 
 	switch tasksFilter.FilterType {
-	case entity.None:
-		tasks, err = u.db.ListTasks(ctx, tasksFilter.UserID)
-		if err != nil {
-			u.log.Error("error getting tasks", "op", op, "error", err)
-			return nil, err
-		}
 	case entity.Tag:
 		tasks, err = u.db.GetTasksByTag(ctx, tasksFilter.UserID, tasksFilter.Tag)
 		if err != nil {
 			u.log.Error("error getting tasks", "op", op, "error", err)
+		
 			return nil, err
 		}
 	case entity.Priority:
 		tasks, err = u.db.GetTasksByPriority(ctx, tasksFilter.UserID, tasksFilter.Priority)
 		if err != nil {
 			u.log.Error("error getting tasks", "op", op, "error", err)
+
+			return nil, err
 		}
 	case entity.Date:
 		tasks, err = u.db.GetTasksByDate(ctx, tasksFilter.UserID, tasksFilter.From, tasksFilter.To)
 		if err != nil {
 			u.log.Error("error getting tasks", "op", op, "error", err)
+
 			return nil, err
 		}
 	default:
-		u.log.Error("invalid filter type", "op", op, "filterType", tasksFilter.FilterType)
-		return nil, errors.New("invalid filter type")
+		tasksFilter.FilterType = entity.None
+		tasks, err = u.db.ListTasks(ctx, tasksFilter.UserID)
+		if err != nil {
+			u.log.Error("error getting tasks", "op", op, "error", err)
 
+			return nil, err
+		}
 	}
 
 	return tasks, nil
