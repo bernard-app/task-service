@@ -15,7 +15,7 @@ type Storage interface {
 	UpdateGroup(ctx context.Context, group entity.Group) (*entity.Group, error)
 	DeleteGroup(ctx context.Context, groupID int64) (*entity.Group, error)
 	CreateTask(ctx context.Context, task entity.Task) (*entity.Task, error)
-	UpdateTask(ctx context.Context, userID uuid.UUID, task entity.Task) (*entity.Task, error)
+	UpdateTask(ctx context.Context, task entity.Task) (*entity.Task, error)
 	DeleteTask(ctx context.Context, userID uuid.UUID, id int64) (*entity.Task, error)
 	GetTask(ctx context.Context, id int64) (*entity.Task, error)
 	ListTasks(ctx context.Context, userID uuid.UUID) ([]*entity.UserTasksTab, error)
@@ -30,15 +30,15 @@ type Storage interface {
 }
 
 type UseCase struct {
-	config *config.Config
-	log    *slog.Logger
-	db     Storage
+	Config *config.Config
+	Log    *slog.Logger
+	DB     Storage
 }
 
 func New(config *config.Config, db Storage, log *slog.Logger) *UseCase {
 	return &UseCase{
-		config: config,
-		log:    log,
-		db:     db,
+		Config: config,
+		Log:    log,
+		DB:     db,
 	}
 }

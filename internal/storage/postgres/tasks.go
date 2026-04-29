@@ -35,7 +35,7 @@ func (s *Storage) CreateTask(ctx context.Context, task entity.Task) (*entity.Tas
 	return createdTask, nil
 }
 
-func (s *Storage) UpdateTask(ctx context.Context, userID uuid.UUID, task entity.Task) (*entity.Task, error) {
+func (s *Storage) UpdateTask(ctx context.Context, task entity.Task) (*entity.Task, error) {
 	const op = "storage.UpdateTask"
 
 	query, args, err := sq.
@@ -51,7 +51,7 @@ func (s *Storage) UpdateTask(ctx context.Context, userID uuid.UUID, task entity.
 			"group_id":    &task.GroupID,
 			"updated_at":  time.Now(),
 		}).
-		Where(sq.Eq{"id": task.ID, "user_id": userID}).
+		Where(sq.Eq{"id": task.ID, "user_id": task.UserID}).
 		Prefix("RETURNING id, name, description, tags, priority, status, start_time, deadline, group_id, user_id, created_at, updated_at").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()

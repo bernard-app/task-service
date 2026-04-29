@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -17,10 +16,10 @@ import (
 
 type UseCase interface {
 	CreateTask(ctx context.Context, task entity.Task) (*entity.Task, error)
-	UpdateTask(ctx context.Context, userID uuid.UUID, task entity.Task) (*entity.Task, error)
+	UpdateTask(ctx context.Context, task entity.Task) (*entity.Task, error)
 	DeleteTask(ctx context.Context, userID uuid.UUID, taskID int64) (*entity.Task, error)
 	GetTask(ctx context.Context, taskID int64) (*entity.Task, error)
-	GetListTask(ctx context.Context, tasksFilter entity.TasksFilter) ([]*entity.UserTasksTab, error)
+	GetListTask(ctx context.Context, userID uuid.UUID, priority, tag, from, to string) ([]*entity.UserTasksTab, error)
 	CreateGroup(ctx context.Context, group entity.Group) (*entity.Group, error)
 	UpdateGroup(ctx context.Context, group entity.Group) (*entity.Group, error)
 	DeleteGroup(ctx context.Context, groupID int64) (*entity.Group, error)
@@ -127,8 +126,9 @@ func (h *Handlers) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	task.ID = taskID
+	task.UserID = userID
 
-	updatedTask, err := h.useCase.UpdateTask(ctx, userID, task)
+	updatedTask, err := h.useCase.UpdateTask(ctx, task)
 	if err != nil {
 		h.log.Error("error updating task", "error", err, "operation", op)
 		h.serverError(w, r, err)
@@ -246,62 +246,12 @@ func (h *Handlers) GetListTask(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	userID, err := GetUserID(r)
-	if err != nil {
-		h.log.Error("error getting user id from request header", err, op)
-		h.errorResponse(w, http.StatusUnauthorized, "empty userID", nil)
-
-		return
-	}
-
-	var filters entity.TasksFilter
-	filters.UserID = userID
-
 	priority := r.URL.Query().Get("priority")
-	if priority != "" {
-		filters.Priority, err = strconv.Atoi(priority)
-		if err != nil {
-			h.log.Error("error parsing priority", "error", err, "operation", op)
-			h.errorResponse(w, http.StatusBadRequest, "error parsing priority", nil)
-
-			return
-		}
-
-		filters.FilterType = entity.Priority
-	}
-
 	tag := r.URL.Query().Get("tag")
-	if tag != "" {
-		filters.Tag = tag
-		filters.FilterType = entity.Tag
-	}
-
 	from := r.URL.Query().Get("from")
-	if from != "" {
-		filters.From, err = time.Parse(time.RFC3339, from)
-		if err != nil {
-			h.log.Error("error parsing from", "error", err, "operation", op)
-			h.errorResponse(w, http.StatusBadRequest, "error parsing from", nil)
-
-			return
-		}
-
-		filters.FilterType = entity.Date
-	}
-
 	to := r.URL.Query().Get("to")
-	if to != "" {
-		filters.To, err = time.Parse(time.RFC3339, to)
-		if err != nil {
-			h.log.Error("error parsing to", "error", err, "operation", op)
-			h.errorResponse(w, http.StatusBadRequest, "error parsing to", nil)
 
-			return
-		}
-
-		filters.FilterType = entity.Date
-	}
-
-	tasks, err := h.useCase.GetListTask(ctx, filters)
+	tasks, err := h.useCase.GetListTask(ctx, userID, priority, tag, from, to)
 	if err != nil {
 		h.log.Error("error getting tasks", "error", err, "operation", op)
 		h.serverError(w, r, err)

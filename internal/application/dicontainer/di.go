@@ -37,6 +37,8 @@ func (c *Container) Init(ctx context.Context) error {
 		return fmt.Errorf("failed to init DB: %w", err)
 	}
 
+	c.Log.Info("database initialized")
+
 	c.HTTPRouter = chi.NewRouter()
 
 	c.UseCase = usecase.New(c.Cfg, c.DB, c.Log)

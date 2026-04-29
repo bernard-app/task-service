@@ -1,0 +1,8 @@
+filename: usecase.go
+packages:
+  bernard/internal/usecase:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+
+    interfaces:
+      Storage:
