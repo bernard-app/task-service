@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -15,12 +16,12 @@ func NewStorage(ctx context.Context, storagePath string) (*Storage, error) {
 
 	poolConfig, err := pgxpool.ParseConfig(storagePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	db, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return &Storage{DB: db}, nil
