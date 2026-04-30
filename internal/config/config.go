@@ -44,7 +44,7 @@ func MustLoadConfig() *Config {
 		log.Fatal("cannot find the config: ", err)
 	}
 
-	cfg.Postgres.Addr = os.Getenv("PG_ADDR")
+	cfg.Postgres.Addr = os.Getenv("POSTGRES_URL")
 
 	return &cfg
 }

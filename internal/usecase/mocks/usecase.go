@@ -40,6 +40,140 @@ func (_m *MockStorage) EXPECT() *MockStorage_Expecter {
 	return &MockStorage_Expecter{mock: &_m.Mock}
 }
 
+// ArchiveOldTasks provides a mock function for the type MockStorage
+func (_mock *MockStorage) ArchiveOldTasks(ctx context.Context) (int64, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ArchiveOldTasks")
+	}
+
+	var r0 int64
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (int64, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) int64); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_ArchiveOldTasks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ArchiveOldTasks'
+type MockStorage_ArchiveOldTasks_Call struct {
+	*mock.Call
+}
+
+// ArchiveOldTasks is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockStorage_Expecter) ArchiveOldTasks(ctx interface{}) *MockStorage_ArchiveOldTasks_Call {
+	return &MockStorage_ArchiveOldTasks_Call{Call: _e.mock.On("ArchiveOldTasks", ctx)}
+}
+
+func (_c *MockStorage_ArchiveOldTasks_Call) Run(run func(ctx context.Context)) *MockStorage_ArchiveOldTasks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_ArchiveOldTasks_Call) Return(n int64, err error) *MockStorage_ArchiveOldTasks_Call {
+	_c.Call.Return(n, err)
+	return _c
+}
+
+func (_c *MockStorage_ArchiveOldTasks_Call) RunAndReturn(run func(ctx context.Context) (int64, error)) *MockStorage_ArchiveOldTasks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ArchiveTask provides a mock function for the type MockStorage
+func (_mock *MockStorage) ArchiveTask(ctx context.Context, userID uuid.UUID, taskID int64) (*entity.Task, error) {
+	ret := _mock.Called(ctx, userID, taskID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ArchiveTask")
+	}
+
+	var r0 *entity.Task
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) (*entity.Task, error)); ok {
+		return returnFunc(ctx, userID, taskID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) *entity.Task); ok {
+		r0 = returnFunc(ctx, userID, taskID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*entity.Task)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int64) error); ok {
+		r1 = returnFunc(ctx, userID, taskID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_ArchiveTask_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ArchiveTask'
+type MockStorage_ArchiveTask_Call struct {
+	*mock.Call
+}
+
+// ArchiveTask is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - taskID int64
+func (_e *MockStorage_Expecter) ArchiveTask(ctx interface{}, userID interface{}, taskID interface{}) *MockStorage_ArchiveTask_Call {
+	return &MockStorage_ArchiveTask_Call{Call: _e.mock.On("ArchiveTask", ctx, userID, taskID)}
+}
+
+func (_c *MockStorage_ArchiveTask_Call) Run(run func(ctx context.Context, userID uuid.UUID, taskID int64)) *MockStorage_ArchiveTask_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_ArchiveTask_Call) Return(task *entity.Task, err error) *MockStorage_ArchiveTask_Call {
+	_c.Call.Return(task, err)
+	return _c
+}
+
+func (_c *MockStorage_ArchiveTask_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, taskID int64) (*entity.Task, error)) *MockStorage_ArchiveTask_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateGroup provides a mock function for the type MockStorage
 func (_mock *MockStorage) CreateGroup(ctx context.Context, group entity.Group) (*entity.Group, error) {
 	ret := _mock.Called(ctx, group)
@@ -1109,8 +1243,8 @@ func (_c *MockStorage_UpdateProject_Call) RunAndReturn(run func(ctx context.Cont
 }
 
 // UpdateTask provides a mock function for the type MockStorage
-func (_mock *MockStorage) UpdateTask(ctx context.Context, task entity.Task) (*entity.Task, error) {
-	ret := _mock.Called(ctx, task)
+func (_mock *MockStorage) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64) (*entity.Task, error) {
+	ret := _mock.Called(ctx, task, userID, taskID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateTask")
@@ -1118,18 +1252,18 @@ func (_mock *MockStorage) UpdateTask(ctx context.Context, task entity.Task) (*en
 
 	var r0 *entity.Task
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.Task) (*entity.Task, error)); ok {
-		return returnFunc(ctx, task)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.UpdateTaskRequest, uuid.UUID, int64) (*entity.Task, error)); ok {
+		return returnFunc(ctx, task, userID, taskID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.Task) *entity.Task); ok {
-		r0 = returnFunc(ctx, task)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.UpdateTaskRequest, uuid.UUID, int64) *entity.Task); ok {
+		r0 = returnFunc(ctx, task, userID, taskID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*entity.Task)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, entity.Task) error); ok {
-		r1 = returnFunc(ctx, task)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, entity.UpdateTaskRequest, uuid.UUID, int64) error); ok {
+		r1 = returnFunc(ctx, task, userID, taskID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1143,24 +1277,36 @@ type MockStorage_UpdateTask_Call struct {
 
 // UpdateTask is a helper method to define mock.On call
 //   - ctx context.Context
-//   - task entity.Task
-func (_e *MockStorage_Expecter) UpdateTask(ctx interface{}, task interface{}) *MockStorage_UpdateTask_Call {
-	return &MockStorage_UpdateTask_Call{Call: _e.mock.On("UpdateTask", ctx, task)}
+//   - task entity.UpdateTaskRequest
+//   - userID uuid.UUID
+//   - taskID int64
+func (_e *MockStorage_Expecter) UpdateTask(ctx interface{}, task interface{}, userID interface{}, taskID interface{}) *MockStorage_UpdateTask_Call {
+	return &MockStorage_UpdateTask_Call{Call: _e.mock.On("UpdateTask", ctx, task, userID, taskID)}
 }
 
-func (_c *MockStorage_UpdateTask_Call) Run(run func(ctx context.Context, task entity.Task)) *MockStorage_UpdateTask_Call {
+func (_c *MockStorage_UpdateTask_Call) Run(run func(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64)) *MockStorage_UpdateTask_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 entity.Task
+		var arg1 entity.UpdateTaskRequest
 		if args[1] != nil {
-			arg1 = args[1].(entity.Task)
+			arg1 = args[1].(entity.UpdateTaskRequest)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		var arg3 int64
+		if args[3] != nil {
+			arg3 = args[3].(int64)
 		}
 		run(
 			arg0,
 			arg1,
+			arg2,
+			arg3,
 		)
 	})
 	return _c
@@ -1171,7 +1317,7 @@ func (_c *MockStorage_UpdateTask_Call) Return(task1 *entity.Task, err error) *Mo
 	return _c
 }
 
-func (_c *MockStorage_UpdateTask_Call) RunAndReturn(run func(ctx context.Context, task entity.Task) (*entity.Task, error)) *MockStorage_UpdateTask_Call {
+func (_c *MockStorage_UpdateTask_Call) RunAndReturn(run func(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64) (*entity.Task, error)) *MockStorage_UpdateTask_Call {
 	_c.Call.Return(run)
 	return _c
 }

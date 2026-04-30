@@ -17,7 +17,7 @@ func (s *Storage) CreateGroup(ctx context.Context, group entity.Group) (*entity.
 		Insert("groups").
 		Columns("name, project_id").
 		Values(&group.Name, group.ProjectID).
-		Prefix("RETURNING id, name, project_id").
+		Suffix("RETURNING id, name, project_id").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -48,7 +48,7 @@ func (s *Storage) UpdateGroup(ctx context.Context, group entity.Group) (*entity.
 		Update("groups").
 		SetMap(map[string]interface{}{"name": &group.Name, "project_id": group.ProjectID}).
 		Where(sq.Eq{"id": group.ID}).
-		Prefix("RETURNING id, name, project_id").
+		Suffix("RETURNING id, name, project_id").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -72,7 +72,7 @@ func (s *Storage) DeleteGroup(ctx context.Context, groupID int64) (*entity.Group
 	query, args, err := sq.
 		Delete("groups").
 		Where(sq.Eq{"id": groupID}).
-		Prefix("RETURNING id, name, project_id").
+		Suffix("RETURNING id, name, project_id").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 

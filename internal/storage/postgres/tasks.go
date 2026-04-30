@@ -9,6 +9,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -17,9 +18,9 @@ func (s *Storage) CreateTask(ctx context.Context, task entity.Task) (*entity.Tas
 
 	query, args, err := sq.
 		Insert("tasks").
-		Columns("id", "name", "description", "tags", "priority", "status", "start_time", "deadline", "group_id", "user_id", "created_at", "updated_at").
-		Values(&task.ID, &task.Name, &task.Description, &task.Tags, &task.Priority, &task.Status, &task.StartTime, &task.Deadline, &task.GroupID, &task.UserID, time.Now(), time.Now()).
-		Prefix("RETURNING id, name, description, tags, priority, status, start_time, deadline, group_id, user_id, created_at, updated_at").
+		Columns("name", "description", "tags", "priority", "status", "start_time", "deadline", "group_id", "user_id", "created_at", "updated_at").
+		Values(&task.Name, &task.Description, &task.Tags, &task.Priority, &task.Status, &task.StartTime, &task.Deadline, &task.GroupID, &task.UserID, time.Now(), time.Now()).
+		Suffix("RETURNING id, name, description, tags, priority, status, start_time, deadline, group_id, user_id, created_at, updated_at, is_archived").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -35,37 +36,72 @@ func (s *Storage) CreateTask(ctx context.Context, task entity.Task) (*entity.Tas
 	return createdTask, nil
 }
 
-func (s *Storage) UpdateTask(ctx context.Context, task entity.Task) (*entity.Task, error) {
+func (s *Storage) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64) (*entity.Task, error) {
 	const op = "storage.UpdateTask"
 
-	query, args, err := sq.
+	builder := sq.
 		Update("tasks").
-		SetMap(map[string]interface{}{
-			"name":        &task.Name,
-			"description": &task.Description,
-			"tags":        &task.Tags,
-			"priority":    &task.Priority,
-			"status":      &task.Status,
-			"start_time":  &task.StartTime,
-			"deadline":    &task.Deadline,
-			"group_id":    &task.GroupID,
-			"updated_at":  time.Now(),
-		}).
-		Where(sq.Eq{"id": task.ID, "user_id": task.UserID}).
-		Prefix("RETURNING id, name, description, tags, priority, status, start_time, deadline, group_id, user_id, created_at, updated_at").
+		Where(sq.Eq{"id": taskID}).
+		Where(sq.Eq{"user_id": userID})
+
+	hasUpdate := false
+
+	if task.Name != nil {
+		builder = builder.Set("name", *task.Name)
+		hasUpdate = true
+	}
+	if task.Description != nil {
+		builder = builder.Set("description", *task.Description)
+		hasUpdate = true
+	}
+	if task.Tags != nil {
+		builder = builder.Set("tags", *task.Tags)
+		hasUpdate = true
+	}
+	if task.Priority != nil {
+		builder = builder.Set("priority", *task.Priority)
+		hasUpdate = true
+	}
+	if task.Status != nil {
+		builder = builder.Set("status", *task.Status)
+		hasUpdate = true
+	}
+	if task.GroupID != nil {
+		builder = builder.Set("group_id", *task.GroupID)
+		hasUpdate = true
+	}
+	if task.StartTime != nil {
+		builder = builder.Set("start_time", task.StartTime.Time())
+		hasUpdate = true
+	}
+	if task.Deadline != nil {
+		builder = builder.Set("deadline", task.Deadline.Time())
+		hasUpdate = true
+	}
+
+	if !hasUpdate {
+		return nil, errors.New(fmt.Sprintf("%s: cannot update task: %s", op, "no update available"))
+	}
+
+	builder = builder.Set("updated_at", time.Now())
+
+	query, args, err := builder.
+		Suffix("RETURNING id, name, description, tags, priority, status, start_time, deadline, group_id, user_id").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
-
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
 	}
 
-	updatedTask, err := execTask(s.DB, ctx, query, args)
-	if err != nil {
+	var UpdatedTask entity.Task
+
+	err = s.DB.QueryRow(ctx, query, args...).
+		Scan(&UpdatedTask.ID, &UpdatedTask.Name, &UpdatedTask.Description, &UpdatedTask.Tags, &UpdatedTask.Priority, &UpdatedTask.Status, &UpdatedTask.StartTime, &UpdatedTask.Deadline, &UpdatedTask.GroupID, &UpdatedTask.UserID)
+	if err != nil || errors.Is(err, pgx.ErrNoRows) {
 		return nil, errors.New(fmt.Sprintf("%s: cannot update task: %s", op, err.Error()))
 	}
 
-	return updatedTask, nil
+	return &UpdatedTask, nil
 }
 
 func (s *Storage) DeleteTask(ctx context.Context, userID uuid.UUID, id int64) (*entity.Task, error) {
@@ -74,7 +110,7 @@ func (s *Storage) DeleteTask(ctx context.Context, userID uuid.UUID, id int64) (*
 	query, args, err := sq.
 		Delete("tasks").
 		Where(sq.Eq{"id": id, "user_id": userID}).
-		Prefix("RETURNING id, name, description, tags, priority, status, start_time, deadline, group_id, user_id, created_at, updated_at").
+		Suffix("RETURNING id, name, description, tags, priority, status, start_time, deadline, group_id, user_id, created_at, updated_at, is_archived").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -94,9 +130,10 @@ func (s *Storage) GetTask(ctx context.Context, id int64) (*entity.Task, error) {
 	const op = "storage.GetTask"
 
 	query, args, err := sq.
-		Select("id", "name", "description", "priority", "status", "start_time", "deadline", "group_id", "user_id", "created_at", "updated_at").
+		Select("id", "name", "tags", "description", "priority", "status", "start_time", "deadline", "group_id", "user_id", "created_at", "updated_at, is_archived").
 		From("tasks").
 		Where(sq.Eq{"id": id}).
+		Where(sq.Eq{"is_archived": false}).
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -121,10 +158,11 @@ func (s *Storage) ListTasks(ctx context.Context, userID uuid.UUID) ([]*entity.Us
 			"g.name",
 			"p.id", "p.name",
 		).
-		From("tasks").
-		Join("group g ON t.group_id = g.id").
-		Join("project p ON g.project_id = p.id").
-		Where(sq.Eq{"user_id": userID}).
+		From("tasks t").
+		Join("groups g ON t.group_id = g.id").
+		Join("projects p ON g.project_id = p.id").
+		Where(sq.Eq{"t.is_archived": false}).
+		Where(sq.Eq{"t.user_id": userID}).
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -152,6 +190,7 @@ func (s *Storage) GetTasksByPriority(ctx context.Context, userID uuid.UUID, prio
 		From("tasks").
 		Join("group g ON t.group_id = g.id").
 		Join("project p ON g.project_id = p.id").
+		Where(sq.Eq{"is_archived": false}).
 		Where(sq.Eq{"user_id": userID, "priority": priority}).
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
@@ -181,6 +220,7 @@ func (s *Storage) GetTasksByDate(ctx context.Context, userID uuid.UUID, from, to
 		Join("group g ON t.group_id = g.id").
 		Join("project p ON g.project_id = p.id").
 		Where(sq.Eq{"user_id": userID}).
+		Where(sq.Eq{"is_archived": false}).
 		Where(sq.GtOrEq{"start_time": from}).
 		Where(sq.LtOrEq{"start_time": to}).
 		PlaceholderFormat(sq.Dollar).
@@ -212,6 +252,7 @@ func (s *Storage) GetTasksByTag(ctx context.Context, userID uuid.UUID, tag strin
 		Join("project p ON g.project_id = p.id").
 		Where(sq.And{
 			sq.Eq{"user_id": userID},
+			sq.Eq{"is_archived": false},
 			sq.Expr("tags LIKE ?", "%"+tag+"%"),
 		}).
 		PlaceholderFormat(sq.Dollar).
@@ -227,6 +268,55 @@ func (s *Storage) GetTasksByTag(ctx context.Context, userID uuid.UUID, tag strin
 	}
 
 	return tasks, nil
+}
+
+func (s *Storage) ArchiveTask(ctx context.Context, userID uuid.UUID, taskID int64) (*entity.Task, error) {
+	const op = "storage.ArchiveTask"
+
+	query, args, err := sq.
+		Update("tasks").
+		Set("is_archived", true).
+		Where(sq.Eq{"id": taskID, "user_id": userID}).
+		Suffix("RETURNING id, name, description, tags, priority, status, start_time, deadline, group_id, user_id, created_at, updated_at, is_archived").
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+	}
+
+	task, err := execTask(s.DB, ctx, query, args)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("%s: cannot get task: %s", op, err.Error()))
+	}
+
+	return task, nil
+}
+
+func (s *Storage) ArchiveOldTasks(ctx context.Context) (int64, error) {
+	const op = "storage.ArchiveOldTasks"
+
+	query, args, err := sq.
+		Update("tasks").
+		Set("is_archived", true).
+		Where(sq.Eq{"status": "done"}).
+		Where(sq.Eq{"is_archived": false}).
+		Where(sq.LtOrEq{"updated_at": time.Now().AddDate(0, 0, -7)}).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+
+	if err != nil {
+		return 0, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+	}
+
+	result, err := s.DB.Exec(ctx, query, args...)
+	if err != nil {
+		return 0, errors.New(fmt.Sprintf("%s: cannot get result: %s", op, err.Error()))
+	}
+
+	rowsAffected := result.RowsAffected()
+
+	return rowsAffected, nil
 }
 
 func getTasks(DB *pgxpool.Pool, ctx context.Context, query string, args []interface{}) ([]*entity.UserTasksTab, error) {
@@ -275,6 +365,7 @@ func execTask(DB *pgxpool.Pool, ctx context.Context, query string, args []interf
 		&result.UserID,
 		&result.CreatedAt,
 		&result.UpdatedAt,
+		&result.IsArchived,
 	)
 
 	if err != nil {

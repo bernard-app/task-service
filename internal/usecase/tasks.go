@@ -22,10 +22,10 @@ func (u *UseCase) CreateTask(ctx context.Context, task entity.Task) (*entity.Tas
 	return createdTask, nil
 }
 
-func (u *UseCase) UpdateTask(ctx context.Context, task entity.Task) (*entity.Task, error) {
+func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64) (*entity.Task, error) {
 	const op = "usecase.UpdateTask"
 
-	updatedTask, err := u.DB.UpdateTask(ctx, task)
+	updatedTask, err := u.DB.UpdateTask(ctx, task, userID, taskID)
 	if err != nil {
 		u.Log.Error("error updating task", "op", op, "error", err)
 		return nil, err
@@ -147,4 +147,17 @@ func (u *UseCase) GetListTask(ctx context.Context, userID uuid.UUID, priority, t
 	}
 
 	return tasks, nil
+}
+
+func (u *UseCase) ArchiveTask(ctx context.Context, userID uuid.UUID, id int64) (*entity.Task, error) {
+	const op = "usecase.ArchiveTask"
+
+	task, err := u.DB.ArchiveTask(ctx, userID, id)
+	if err != nil {
+		u.Log.Error("cannot archive task", "user_id", userID, "operation", op, "error", err)
+
+		return nil, err
+	}
+
+	return task, err
 }
