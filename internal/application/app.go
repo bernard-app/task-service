@@ -4,6 +4,7 @@ import (
 	"bernard/internal/application/dicontainer"
 	"bernard/internal/config"
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"sync"
@@ -50,14 +51,19 @@ func (a *Application) Run(ctx context.Context) error {
 	}
 
 	a.wg.Add(1)
+	go func() {
+		defer a.wg.Done()
+		a.container.UseCase.StartArchiveWorker(ctx)
+	}()
 
+	a.wg.Add(1)
 	go func() {
 		defer a.wg.Done()
 		a.log.Info("Run: server started", "address", a.cfg.HTTPServer.Address)
 
 		err = a.server.ListenAndServe()
-		if err != nil {
-			a.log.Error("ListenAndServe", "error", err)
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			a.log.Error("ListenAndServe crashed", "error", err)
 		}
 	}()
 

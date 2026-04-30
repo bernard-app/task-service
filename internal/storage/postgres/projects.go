@@ -19,7 +19,7 @@ func (s *Storage) CreateProject(ctx context.Context, project entity.Project) (*e
 		Insert("projects").
 		Columns("name", "description", "user_id").
 		Values(&project.Name, &project.Description, &project.UserID).
-		Prefix("RETURNING id, name, description, user_id").
+		Suffix("RETURNING id, name, description, user_id").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -29,7 +29,7 @@ func (s *Storage) CreateProject(ctx context.Context, project entity.Project) (*e
 
 	var createdProject entity.Project
 
-	err = s.DB.QueryRow(ctx, query, args...).Scan(&createdProject.ID, &createdProject.Name, createdProject.Description, &createdProject.UserID)
+	err = s.DB.QueryRow(ctx, query, args...).Scan(&createdProject.ID, &createdProject.Name, &createdProject.Description, &createdProject.UserID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
@@ -50,7 +50,7 @@ func (s *Storage) UpdateProject(ctx context.Context, project entity.Project) (*e
 		Update("projects").
 		SetMap(map[string]interface{}{"name": &project.Name, "description": &project.Description}).
 		Where(sq.Eq{"id": &project.ID}).
-		Prefix("RETURNING id, name, description, user_id").
+		Suffix("RETURNING id, name, description, user_id").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -74,7 +74,7 @@ func (s *Storage) DeleteProject(ctx context.Context, projectID int64) (*entity.P
 	query, args, err := sq.
 		Delete("groups").
 		Where(sq.Eq{"id": projectID}).
-		Prefix("RETURNING id, name, description, user_id").
+		Suffix("RETURNING id, name, description, user_id").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -104,7 +104,12 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 		From("projects p").
 		LeftJoin("groups g ON p.id = g.project_id").
 		LeftJoin("tasks t ON g.id = t.group_id").
-		Where(sq.Eq{"p.id": projectID, "p.user_id": userID}).
+		Where(sq.And{
+			sq.Eq{"p.id": projectID},
+			sq.Eq{"p.user_id": userID},
+			sq.Eq{"t.user_id": userID},
+			sq.Eq{"t.is_archived": false},
+		}).
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 

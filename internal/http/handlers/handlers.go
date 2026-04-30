@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -16,7 +17,7 @@ import (
 
 type UseCase interface {
 	CreateTask(ctx context.Context, task entity.Task) (*entity.Task, error)
-	UpdateTask(ctx context.Context, task entity.Task) (*entity.Task, error)
+	UpdateTask(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64) (*entity.Task, error)
 	DeleteTask(ctx context.Context, userID uuid.UUID, taskID int64) (*entity.Task, error)
 	GetTask(ctx context.Context, taskID int64) (*entity.Task, error)
 	GetListTask(ctx context.Context, userID uuid.UUID, priority, tag, from, to string) ([]*entity.UserTasksTab, error)
@@ -63,15 +64,51 @@ func (h *Handlers) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := TaskCU(r)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.log.Error("error getting task from request header", err, op)
-		h.errorResponse(w, http.StatusBadRequest, "error getting task from request", nil)
+		h.log.Error("error reading request body", err, op)
+		h.serverError(w, r, err)
+
+		return
+	}
+	defer r.Body.Close()
+
+	var req entity.CreateTaskRequest
+
+	err = json.Unmarshal(body, &req)
+	if err != nil {
+		h.log.Error("error unmarshalling request", err, op)
+		h.serverError(w, r, err)
 
 		return
 	}
 
-	task.UserID = userID
+	if req.GroupID <= 0 {
+		details := map[string]string{"group_id": "Укажите существующий ID группы (больше нуля)"}
+		h.errorResponse(w, http.StatusBadRequest, "Ошибка валидации", details)
+
+		return
+	}
+
+	task := entity.Task{
+		Name:        req.Name,
+		Description: req.Description,
+		Tags:        req.Tags,
+		Priority:    req.Priority,
+		Status:      req.Status,
+		GroupID:     req.GroupID,
+		UserID:      userID,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		IsArchived:  false,
+	}
+
+	if req.StartTime != nil {
+		task.StartTime = req.StartTime.Time()
+	}
+	if req.Deadline != nil {
+		task.Deadline = req.Deadline.Time()
+	}
 
 	createdTask, err := h.useCase.CreateTask(ctx, task)
 	if err != nil {
@@ -117,18 +154,26 @@ func (h *Handlers) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := TaskCU(r)
+	var req entity.UpdateTaskRequest
+
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.log.Error("error getting task from request", err, op)
-		h.errorResponse(w, http.StatusBadRequest, "error getting task from request", nil)
+		h.log.Error("error reading request body", err, op)
+		h.serverError(w, r, err)
+
+		return
+	}
+	defer r.Body.Close()
+
+	err = json.Unmarshal(body, &req)
+	if err != nil {
+		h.log.Error("error unmarshalling request", err, op)
+		h.errorResponse(w, http.StatusBadRequest, "error unmarshalling request", nil)
 
 		return
 	}
 
-	task.ID = taskID
-	task.UserID = userID
-
-	updatedTask, err := h.useCase.UpdateTask(ctx, task)
+	updatedTask, err := h.useCase.UpdateTask(ctx, req, userID, taskID)
 	if err != nil {
 		h.log.Error("error updating task", "error", err, "operation", op)
 		h.serverError(w, r, err)
@@ -260,23 +305,6 @@ func (h *Handlers) GetListTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.writeJSON(w, http.StatusOK, tasks)
-}
-
-func TaskCU(r *http.Request) (entity.Task, error) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return entity.Task{}, err
-	}
-	defer r.Body.Close()
-
-	var task entity.Task
-
-	err = json.Unmarshal(body, &task)
-	if err != nil {
-		return entity.Task{}, err
-	}
-
-	return task, nil
 }
 
 // CreateGroup godoc

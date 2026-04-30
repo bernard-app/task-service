@@ -5,6 +5,7 @@ import (
 	"bernard/internal/domain/entity"
 	"bernard/internal/usecase"
 	mocks "bernard/internal/usecase/mocks"
+	"bernard/utils"
 	"context"
 	"log/slog"
 	"os"
@@ -89,8 +90,10 @@ func TestUseCase_UpdateTask(t *testing.T) {
 	}
 
 	type args struct {
-		ctx  context.Context
-		task entity.Task
+		ctx    context.Context
+		task   entity.UpdateTaskRequest
+		userID uuid.UUID
+		taskID int64
 	}
 
 	tests := []struct {
@@ -104,10 +107,12 @@ func TestUseCase_UpdateTask(t *testing.T) {
 			name: "success",
 			args: args{
 				ctx: context.Background(),
-				task: entity.Task{
-					Name:        "test",
-					Description: "test",
+				task: entity.UpdateTaskRequest{
+					Name:        utils.Ptr("test"),
+					Description: utils.Ptr("test"),
 				},
+				userID: uuid.New(),
+				taskID: 1,
 			},
 			want: &entity.Task{
 				Name:        "test",
@@ -131,7 +136,7 @@ func TestUseCase_UpdateTask(t *testing.T) {
 				DB:     mockStorage,
 			}
 
-			got, err := u.UpdateTask(tt.args.ctx, tt.args.task)
+			got, err := u.UpdateTask(tt.args.ctx, tt.args.task, tt.args.userID, tt.args.taskID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateTask() error = %v, wantErr %v", err, tt.wantErr)
 			}

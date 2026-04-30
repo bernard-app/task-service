@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"bernard/utils"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,6 +33,7 @@ type Task struct {
 	UserID      uuid.UUID `json:"user_id"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	IsArchived  bool      `json:"is_archived"`
 }
 
 type Group struct {
@@ -78,4 +80,36 @@ type ErrorResponse struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Details interface{} `json:"details,omitempty"`
+}
+
+type CreateTaskRequest struct {
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Tags        string            `json:"tags"`
+	Priority    int               `json:"priority"`
+	Status      string            `json:"status"`
+	GroupID     int64             `json:"group_id"`
+	StartTime   *utils.CustomDate `json:"start_time"`
+	Deadline    *utils.CustomDate `json:"deadline"`
+}
+
+type UpdateTaskRequest struct {
+	Name        *string           `json:"name"`
+	Description *string           `json:"description"`
+	Tags        *string           `json:"tags"`
+	Priority    *int              `json:"priority"`
+	Status      *string           `json:"status"`
+	GroupID     *int64            `json:"group_id"`
+	StartTime   *utils.CustomDate `json:"start_time"`
+	Deadline    *utils.CustomDate `json:"deadline"`
+}
+
+type GroupRequest struct {
+	Name      string `json:"name"`
+	ProjectID int64  `json:"project_id"`
+}
+
+type ProjectRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
