@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"bernard/utils"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,49 +14,49 @@ const (
 
 const (
 	None = iota
-	Tag
-	Priority
-	Date
+	TagFilter
+	PriorityFilter
+	DateFilter
 )
 
 type Task struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Tags        string    `json:"tags"`
-	Priority    int       `json:"priority"`
-	Status      string    `json:"status"`
-	StartTime   time.Time `json:"start_time"`
-	Deadline    time.Time `json:"deadline"`
-	GroupID     int64     `json:"group_id"`
-	UserID      uuid.UUID `json:"user_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	IsArchived  bool      `json:"is_archived"`
+	ID          int64      `json:"id"`
+	Name        string     `json:"name"`
+	Description *string    `json:"description"`
+	Tags        []*Tag     `json:"tags"`
+	Priority    *int       `json:"priority"`
+	Status      *string    `json:"status"`
+	StartTime   *time.Time `json:"start_time"`
+	Deadline    *time.Time `json:"deadline"`
+	GroupID     int64      `json:"group_id"`
+	UserID      uuid.UUID  `json:"user_id"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	IsArchived  bool       `json:"is_archived"`
 }
 
 type Group struct {
-	ID        int64  `json:"id"`
-	Name      string `json:"name"`
-	Tasks     []Task `json:"tasks"`
-	TaskCount int    `json:"task_count"`
-	ProjectID int64  `json:"project_id"`
+	ID        int64   `json:"id"`
+	Name      string  `json:"name"`
+	Tasks     []*Task `json:"tasks"`
+	TaskCount int     `json:"task_count"`
+	ProjectID int64   `json:"project_id"`
 }
 
 type Project struct {
 	ID          int64     `json:"id"`
 	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Groups      []Group   `json:"groups"`
+	Description *string   `json:"description"`
+	Groups      []*Group  `json:"groups"`
 	TaskCount   int       `json:"task_count"`
 	UserID      uuid.UUID `json:"user_id"`
 }
 
-type User struct {
-	ID          uuid.UUID `json:"id"`
-	Username    string    `json:"username"`
-	DisplayName string    `json:"display_name"`
-	Email       string    `json:"email"`
+type Tag struct {
+	ID     int64     `json:"id"`
+	Name   string    `json:"name"`
+	Color  string    `json:"color"`
+	UserID uuid.UUID `json:"user_id"`
 }
 
 type UserTasksTab struct {
@@ -70,10 +69,12 @@ type UserTasksTab struct {
 type TasksFilter struct {
 	UserID     uuid.UUID
 	FilterType int
-	Priority   int
-	Tag        string
-	From       time.Time
-	To         time.Time
+	Priority   *int
+	Tag        *int64
+	From       *time.Time
+	To         *time.Time
+	Limit      uint64
+	Offset     uint64
 }
 
 type ErrorResponse struct {
@@ -83,33 +84,33 @@ type ErrorResponse struct {
 }
 
 type CreateTaskRequest struct {
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Tags        string            `json:"tags"`
-	Priority    int               `json:"priority"`
-	Status      string            `json:"status"`
-	GroupID     int64             `json:"group_id"`
-	StartTime   *utils.CustomDate `json:"start_time"`
-	Deadline    *utils.CustomDate `json:"deadline"`
+	Name        string     `json:"name"`
+	Description *string    `json:"description"`
+	Tags        *string    `json:"tags"`
+	Priority    *int       `json:"priority"`
+	Status      *string    `json:"status"`
+	GroupID     int64      `json:"group_id"`
+	StartTime   *time.Time `json:"start_time"`
+	Deadline    *time.Time `json:"deadline"`
 }
 
 type UpdateTaskRequest struct {
-	Name        *string           `json:"name"`
-	Description *string           `json:"description"`
-	Tags        *string           `json:"tags"`
-	Priority    *int              `json:"priority"`
-	Status      *string           `json:"status"`
-	GroupID     *int64            `json:"group_id"`
-	StartTime   *utils.CustomDate `json:"start_time"`
-	Deadline    *utils.CustomDate `json:"deadline"`
+	Name        *string    `json:"name"`
+	Description *string    `json:"description"`
+	Tags        *string    `json:"tags"`
+	Priority    *int       `json:"priority"`
+	Status      *string    `json:"status"`
+	GroupID     *int64     `json:"group_id"`
+	StartTime   *time.Time `json:"start_time"`
+	Deadline    *time.Time `json:"deadline"`
 }
 
-type GroupRequest struct {
-	Name      string `json:"name"`
-	ProjectID int64  `json:"project_id"`
+type UpdateGroupRequest struct {
+	Name      *string `json:"name"`
+	ProjectID *int64  `json:"project_id"`
 }
 
-type ProjectRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+type UpdateProjectRequest struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
 }

@@ -4,16 +4,15 @@ import (
 	"bernard/internal/domain/entity"
 	"context"
 	"errors"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-func (u *UseCase) CreateTask(ctx context.Context, task entity.Task) (*entity.Task, error) {
+func (u *UseCase) CreateTask(ctx context.Context, task entity.Task, tagsIDs []int64) (*entity.Task, error) {
 	const op = "usecase.CreateTask"
 
-	createdTask, err := u.DB.CreateTask(ctx, task)
+	createdTask, err := u.DB.CreateTask(ctx, task, tagsIDs)
 	if err != nil {
 		u.Log.Error("error creating task", "op", op, "error", err)
 		return nil, err
@@ -73,72 +72,64 @@ func (u *UseCase) GetTask(ctx context.Context, taskID int64) (*entity.Task, erro
 	return task, nil
 }
 
-func (u *UseCase) GetListTask(ctx context.Context, userID uuid.UUID, priority, tag, from, to string) ([]*entity.UserTasksTab, error) {
+func (u *UseCase) GetListTask(ctx context.Context, userID uuid.UUID, priority *int, tagID *int64, from, to *time.Time, limit, offset uint64) ([]*entity.UserTasksTab, error) {
 	const op = "usecase.GetTasks"
 
 	var tasks []*entity.UserTasksTab
 	var err error
 
 	if userID == uuid.Nil {
-		u.Log.Error("invalid userID", "op", op, "userID", userID, "priority", priority, "tag", tag)
+		u.Log.Error("invalid userID", "op", op, "userID", userID, "priority", priority, "tag", tagID)
 		return nil, errors.New("invalid userID")
 	}
 
 	taskFilter := &entity.TasksFilter{}
+	taskFilter.UserID = userID
 
-	if priority != "" {
-		taskFilter.Priority, err = strconv.Atoi(priority)
-		if err != nil {
-			u.Log.Error("invalid priority", "op", op, "error", err)
-			return nil, errors.New("invalid priority")
+	if priority != nil {
+		taskFilter.Priority = priority
+		taskFilter.FilterType = entity.PriorityFilter
+	} else if tagID != nil {
+		taskFilter.Tag = tagID
+		taskFilter.FilterType = entity.TagFilter
+	} else if from != nil {
+		taskFilter.From = from
+
+		if to != nil {
+			taskFilter.To = to
+		} else {
+			return nil, errors.New("invalid data")
 		}
 
-		taskFilter.FilterType = entity.Priority
-	} else if tag != "" {
-		taskFilter.Tag = tag
-		taskFilter.FilterType = entity.Tag
-	} else if from != "" {
-		taskFilter.From, err = time.Parse(time.DateTime, from)
-		if err != nil {
-			u.Log.Error("invalid from", "op", op, "error", err)
-			return nil, errors.New("invalid from")
-		}
-
-		taskFilter.To, err = time.Parse(time.RFC3339, to)
-		if err != nil {
-			u.Log.Error("invalid to", "op", op, "error", err)
-			return nil, errors.New("invalid to")
-		}
-
-		taskFilter.FilterType = entity.Date
+		taskFilter.FilterType = entity.DateFilter
 	} else {
 		taskFilter.FilterType = entity.None
 	}
 
 	switch taskFilter.FilterType {
-	case entity.Tag:
-		tasks, err = u.DB.GetTasksByTag(ctx, taskFilter.UserID, taskFilter.Tag)
+	case entity.TagFilter:
+		tasks, err = u.DB.GetTasksByTag(ctx, taskFilter.UserID, *taskFilter.Tag, limit, offset)
 		if err != nil {
 			u.Log.Error("error getting tasks", "op", op, "error", err)
 
 			return nil, err
 		}
-	case entity.Priority:
-		tasks, err = u.DB.GetTasksByPriority(ctx, taskFilter.UserID, taskFilter.Priority)
+	case entity.PriorityFilter:
+		tasks, err = u.DB.GetTasksByPriority(ctx, taskFilter.UserID, *taskFilter.Priority, limit, offset)
 		if err != nil {
 			u.Log.Error("error getting tasks", "op", op, "error", err)
 
 			return nil, err
 		}
-	case entity.Date:
-		tasks, err = u.DB.GetTasksByDate(ctx, taskFilter.UserID, taskFilter.From, taskFilter.To)
+	case entity.DateFilter:
+		tasks, err = u.DB.GetTasksByDate(ctx, taskFilter.UserID, *taskFilter.From, *taskFilter.To, limit, offset)
 		if err != nil {
 			u.Log.Error("error getting tasks", "op", op, "error", err)
 
 			return nil, err
 		}
 	case entity.None:
-		tasks, err = u.DB.ListTasks(ctx, taskFilter.UserID)
+		tasks, err = u.DB.ListTasks(ctx, taskFilter.UserID, limit, offset)
 		if err != nil {
 			u.Log.Error("error getting tasks", "op", op, "error", err)
 

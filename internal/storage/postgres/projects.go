@@ -103,12 +103,10 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 		).
 		From("projects p").
 		LeftJoin("groups g ON p.id = g.project_id").
-		LeftJoin("tasks t ON g.id = t.group_id").
+		LeftJoin("tasks t ON g.id = t.group_id AND t.is_archived = false AND t.user_id = p.user_id").
 		Where(sq.And{
 			sq.Eq{"p.id": projectID},
 			sq.Eq{"p.user_id": userID},
-			sq.Eq{"t.user_id": userID},
-			sq.Eq{"t.is_archived": false},
 		}).
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
@@ -121,6 +119,7 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 	groupsMap := make(map[int64]*entity.Group)
 	var groupIDsOrder []int64
 	projectTaskCount := 0
+	hasProject := false
 
 	rows, err := s.DB.Query(ctx, query, args...)
 	if err != nil {
@@ -129,6 +128,8 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 	defer rows.Close()
 
 	for rows.Next() {
+		hasProject = true
+
 		var gID, gProjectID *int64
 		var gName *string
 
@@ -140,7 +141,7 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 		err = rows.Scan(
 			&project.ID, &project.Name, &project.Description, &project.UserID,
 			&gID, &gName, &gProjectID,
-			&tID, &tName, &tDesc, &tTags, &tPriority, &tStatus, &tGroupID, &tStartTime, &tDeadline, &tCreatedAt, &tUpdatedAt,
+			&tID, &tName, &tDesc, &tTags, &tPriority, &tStatus, &tStartTime, &tDeadline, &tGroupID, &tCreatedAt, &tUpdatedAt,
 		)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("%s: cannot scan project: %s", op, err.Error()))
@@ -155,18 +156,17 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 					Name:      *gName,
 					ProjectID: *gProjectID,
 					TaskCount: 0,
-					Tasks:     make([]entity.Task, 0),
+					Tasks:     make([]*entity.Task, 0),
 				}
 				groupsMap[*gID] = group
 				groupIDsOrder = append(groupIDsOrder, *gID)
 			}
 
 			if tID != nil {
-				task := entity.Task{
+				task := &entity.Task{
 					ID:          *tID,
 					Name:        *tName,
 					Description: *tDesc,
-					Tags:        *tTags,
 					Priority:    *tPriority,
 					Status:      *tStatus,
 					StartTime:   *tStartTime,
@@ -187,8 +187,12 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 		return nil, errors.New(fmt.Sprintf("%s: cannot iterate projects: %s", op, err.Error()))
 	}
 
+	if !hasProject {
+		return nil, fmt.Errorf("%s: project not found", op)
+	}
+
 	for _, id := range groupIDsOrder {
-		project.Groups = append(project.Groups, *groupsMap[id])
+		project.Groups = append(project.Groups, groupsMap[id])
 	}
 
 	project.TaskCount = projectTaskCount

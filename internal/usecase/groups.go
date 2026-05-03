@@ -4,6 +4,8 @@ import (
 	"bernard/internal/domain/entity"
 	"context"
 	"errors"
+
+	"github.com/google/uuid"
 )
 
 func (u *UseCase) CreateGroup(ctx context.Context, group entity.Group) (*entity.Group, error) {
@@ -18,10 +20,10 @@ func (u *UseCase) CreateGroup(ctx context.Context, group entity.Group) (*entity.
 	return createdGroup, nil
 }
 
-func (u *UseCase) UpdateGroup(ctx context.Context, group entity.Group) (*entity.Group, error) {
+func (u *UseCase) UpdateGroup(ctx context.Context, group entity.UpdateGroupRequest, userID uuid.UUID, groupID int64) (*entity.Group, error) {
 	const op = "usecase.UpdateGroup"
 
-	updatedGroup, err := u.DB.UpdateGroup(ctx, group)
+	updatedGroup, err := u.DB.UpdateGroup(ctx, group, userID, groupID)
 	if err != nil {
 		u.Log.Error("error while updating group", "op", op, "error", err)
 		return nil, err
