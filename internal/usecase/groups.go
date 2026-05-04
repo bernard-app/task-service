@@ -3,7 +3,7 @@ package usecase
 import (
 	"bernard/internal/domain/entity"
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -32,18 +32,20 @@ func (u *UseCase) UpdateGroup(ctx context.Context, group entity.UpdateGroupReque
 	return updatedGroup, nil
 }
 
-func (u *UseCase) DeleteGroup(ctx context.Context, groupID int64) (*entity.Group, error) {
+func (u *UseCase) DeleteGroup(ctx context.Context, groupID int64, userID uuid.UUID) error {
 	const op = "usecase.DeleteGroup"
 
 	if groupID <= 0 {
-		return nil, errors.New("invalid group id")
+		u.Log.Error("invalid group id")
+
+		return fmt.Errorf("invalid group id")
 	}
 
-	deletedGroup, err := u.DB.DeleteGroup(ctx, groupID)
+	err := u.DB.DeleteGroup(ctx, groupID, userID)
 	if err != nil {
 		u.Log.Error("error while deleting group", "op", op, "error", err)
-		return nil, err
+		return err
 	}
 
-	return deletedGroup, nil
+	return nil
 }

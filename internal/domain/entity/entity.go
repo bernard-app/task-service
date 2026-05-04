@@ -36,11 +36,12 @@ type Task struct {
 }
 
 type Group struct {
-	ID        int64   `json:"id"`
-	Name      string  `json:"name"`
-	Tasks     []*Task `json:"tasks"`
-	TaskCount int     `json:"task_count"`
-	ProjectID int64   `json:"project_id"`
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Tasks     []*Task   `json:"tasks"`
+	TaskCount int       `json:"task_count"`
+	ProjectID int64     `json:"project_id"`
+	UserID    uuid.UUID `json:"user_id"`
 }
 
 type Project struct {
@@ -97,7 +98,7 @@ type CreateTaskRequest struct {
 type UpdateTaskRequest struct {
 	Name        *string    `json:"name"`
 	Description *string    `json:"description"`
-	Tags        *string    `json:"tags"`
+	TagsIDs     *[]int64   `json:"tags"`
 	Priority    *int       `json:"priority"`
 	Status      *string    `json:"status"`
 	GroupID     *int64     `json:"group_id"`

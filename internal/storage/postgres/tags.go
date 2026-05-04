@@ -3,6 +3,7 @@ package postgres
 import (
 	"bernard/internal/domain/entity"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -78,12 +79,12 @@ func (s *Storage) UpdateTag(ctx context.Context, tagID int64, name *string, colo
 	return &updatedTag, nil
 }
 
-func (s *Storage) DeleteTag(ctx context.Context, tagID int64) error {
+func (s *Storage) DeleteTag(ctx context.Context, tagID int64, userID uuid.UUID) error {
 	const op = "storage.DeleteTag"
 
 	query, args, err := sq.
 		Delete("tags").
-		Where(sq.Eq{"id": tagID}).
+		Where(sq.Eq{"id": tagID, "user_id": userID}).
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -181,10 +182,38 @@ func (s *Storage) GetTagList(ctx context.Context, userID uuid.UUID, limit, offse
 	return tags, nil
 }
 
-func (s *Storage) AddTagToTask(ctx context.Context, tagID, taskID int64) error {
+func (s *Storage) AddTagToTask(ctx context.Context, tagID, taskID int64, userID uuid.UUID) error {
 	const op = "storage.AddTagToTask"
 
+	// Transaction start
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot start transaction. op: %s, error: %w", op, err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Check for user's access
 	query, args, err := sq.
+		Select("1").
+		From("tasks t, tags tag").
+		Where(sq.Eq{"t.id": taskID, "t.user_id": userID, "tag.id": tagID, "tag.user_id": userID}).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return fmt.Errorf("cannot build query. op: %s, error: %w", op, err)
+	}
+
+	var exists int
+	err = tx.QueryRow(ctx, query, args...).Scan(&exists)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%s: task not found or access denied", op)
+		}
+		return fmt.Errorf("%s: cannot check task ownership: %w", op, err)
+	}
+
+	// Adds tag
+	query, args, err = sq.
 		Insert("tasks_tags").
 		Columns("task_id", "tag_id").
 		Values(taskID, tagID).
@@ -195,7 +224,7 @@ func (s *Storage) AddTagToTask(ctx context.Context, tagID, taskID int64) error {
 		return fmt.Errorf("cannot build query. op: %s, error: %w", op, err)
 	}
 
-	_, err = s.DB.Exec(ctx, query, args...)
+	_, err = tx.Exec(ctx, query, args...)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
@@ -210,13 +239,46 @@ func (s *Storage) AddTagToTask(ctx context.Context, tagID, taskID int64) error {
 		return fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)
 	}
 
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot commit transaction. op: %s, error: %w", op, err)
+	}
+
 	return nil
 }
 
-func (s *Storage) RemoveTagFromTask(ctx context.Context, tagID, taskID int64) error {
+func (s *Storage) RemoveTagFromTask(ctx context.Context, tagID, taskID int64, userID uuid.UUID) error {
 	const op = "storage.RemoveTagFromTask"
 
+	// Transaction start
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot start transaction. op: %s, error: %w", op, err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Check for user's access
 	query, args, err := sq.
+		Select("1").
+		From("tasks t, tags tag").
+		Where(sq.Eq{"t.id": taskID, "t.user_id": userID, "tag.id": tagID, "tag.user_id": userID}).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return fmt.Errorf("cannot build query. op: %s, error: %w", op, err)
+	}
+
+	var exists int
+	err = tx.QueryRow(ctx, query, args...).Scan(&exists)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%s: task not found or access denied", op)
+		}
+		return fmt.Errorf("%s: cannot check task ownership: %w", op, err)
+	}
+
+	// Removing tag
+	query, args, err = sq.
 		Delete("tasks_tags").
 		Where(sq.And{
 			sq.Eq{"task_id": taskID},
@@ -229,7 +291,7 @@ func (s *Storage) RemoveTagFromTask(ctx context.Context, tagID, taskID int64) er
 		return fmt.Errorf("cannot build query. op: %s, error: %w", op, err)
 	}
 
-	_, err = s.DB.Exec(ctx, query, args...)
+	_, err = tx.Exec(ctx, query, args...)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
@@ -238,6 +300,11 @@ func (s *Storage) RemoveTagFromTask(ctx context.Context, tagID, taskID int64) er
 		}
 
 		return fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot commit transaction. op: %s, error: %w", op, err)
 	}
 
 	return nil

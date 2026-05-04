@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func (s *Storage) CreateTask(ctx context.Context, task entity.Task) (*entity.Task, error) {
+func (s *Storage) CreateTask(ctx context.Context, task entity.Task, tasksIDs []int64) (*entity.Task, error) {
 	const op = "storage.CreateTask"
 
 	query, args, err := sq.
@@ -28,12 +28,60 @@ func (s *Storage) CreateTask(ctx context.Context, task entity.Task) (*entity.Tas
 		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
 	}
 
-	createdTask, err := execTask(s.DB, ctx, query, args)
+	tx, err := s.DB.Begin(ctx)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot create task: %s", op, err.Error()))
+		return nil, errors.New(fmt.Sprintf("%s: cannot start transaction: %s", op, err.Error()))
+	}
+	defer tx.Rollback(ctx)
+
+	var createdTask entity.Task
+
+	err = tx.
+		QueryRow(ctx, query, args...).
+		Scan(
+			&createdTask.ID, &createdTask.Name, &createdTask.Description, &createdTask.Priority,
+			&createdTask.Status, &createdTask.StartTime, &createdTask.Deadline, &createdTask.GroupID,
+			&createdTask.UserID, &createdTask.CreatedAt, &createdTask.UpdatedAt, &createdTask.IsArchived,
+		)
+	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return nil, fmt.Errorf("%s: group does not exists", op)
+		}
+
+		return nil, errors.New(fmt.Sprintf("%s: cannot scan row: %s", op, err.Error()))
 	}
 
-	return createdTask, nil
+	if len(tasksIDs) > 0 {
+		tagsBuilder := sq.Insert("tasks_tags").Columns("task_id", "tag_id")
+		for _, id := range task.Tags {
+			tagsBuilder = tagsBuilder.Values(createdTask.ID, id)
+		}
+
+		query, args, err = tagsBuilder.PlaceholderFormat(sq.Dollar).ToSql()
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		}
+
+		_, err = tx.Exec(ctx, query, args...)
+		if err != nil {
+			var pgErr *pgconn.PgError
+
+			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+				return nil, fmt.Errorf("%s: tag does not exists", op)
+			}
+
+			return nil, fmt.Errorf("%s: cannot scan row: %w", op, err)
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("%s: cannot commit transaction: %s", op, err.Error()))
+	}
+
+	return &createdTask, nil
 }
 
 func (s *Storage) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64) (*entity.Task, error) {
@@ -76,7 +124,7 @@ func (s *Storage) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 	}
 
 	if !hasUpdate {
-		return nil, errors.New(fmt.Sprintf("%s: cannot update task: %s", op, "no update available"))
+		return nil, fmt.Errorf(op, "cannot update task")
 	}
 
 	builder = builder.Set("updated_at", time.Now())
@@ -86,12 +134,18 @@ func (s *Storage) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err)
 	}
 
 	var UpdatedTask entity.Task
 
-	err = s.DB.QueryRow(ctx, query, args...).
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s: cannot start transaction: %s", op, err)
+	}
+	defer tx.Rollback(ctx)
+
+	err = tx.QueryRow(ctx, query, args...).
 		Scan(&UpdatedTask.ID, &UpdatedTask.Name, &UpdatedTask.Description, &UpdatedTask.Priority, &UpdatedTask.Status, &UpdatedTask.StartTime, &UpdatedTask.Deadline, &UpdatedTask.GroupID, &UpdatedTask.UserID)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -102,35 +156,82 @@ func (s *Storage) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 			}
 		}
 
-		return nil, errors.New(fmt.Sprintf("%s: cannot update task: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot scan row: %s", op, err.Error())
+	}
+
+	if task.TagsIDs != nil {
+		// Deleting all task tags
+		query, args, err = sq.Delete("tasks_tags").Where(sq.Eq{"task_id": UpdatedTask.ID}).PlaceholderFormat(sq.Dollar).ToSql()
+		if err != nil {
+			return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
+		}
+
+		_, err = tx.Exec(ctx, query, args...)
+		if err != nil {
+			return nil, fmt.Errorf("%s: cannot update task: %s", op, err.Error())
+		}
+
+		// Add new task's tags
+		if len(*task.TagsIDs) > 0 {
+			tagBuilder := sq.Insert("tasks_tags").Columns("task_id", "tag_id")
+
+			for _, tag := range *task.TagsIDs {
+				tagBuilder = tagBuilder.Values(UpdatedTask.ID, tag)
+			}
+
+			query, args, err = tagBuilder.PlaceholderFormat(sq.Dollar).ToSql()
+			if err != nil {
+				return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
+			}
+
+			_, err = tx.Exec(ctx, query, args...)
+			if err != nil {
+				var pgErr *pgconn.PgError
+
+				if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+					return nil, fmt.Errorf("%s: tag does not exist", op)
+				}
+
+				return nil, fmt.Errorf("%s: cannot update task: %s", op, err.Error())
+			}
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s: cannot commit transaction: %s", op, err.Error())
 	}
 
 	return &UpdatedTask, nil
 }
 
-func (s *Storage) DeleteTask(ctx context.Context, userID uuid.UUID, id int64) (*entity.Task, error) {
+func (s *Storage) DeleteTask(ctx context.Context, userID uuid.UUID, id int64) error {
 	const op = "storage.DeleteTask"
 
 	query, args, err := sq.
 		Delete("tasks").
 		Where(sq.Eq{"id": id, "user_id": userID}).
-		Suffix("RETURNING id, name, description, priority, status, start_time, deadline, group_id, user_id, created_at, updated_at, is_archived").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
-	deletedTask, err := execTask(s.DB, ctx, query, args)
+	result, err := s.DB.Exec(ctx, query, args...)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot delete task: %s", op, err.Error()))
+		return fmt.Errorf("%s: cannot update task: %s", op, err.Error())
 	}
 
-	return deletedTask, nil
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("%s: task not found or access denied", op)
+	}
+
+	return nil
 }
 
-func (s *Storage) GetTask(ctx context.Context, id int64) (*entity.Task, error) {
+func (s *Storage) GetTask(ctx context.Context, id int64, userID uuid.UUID) (*entity.Task, error) {
 	const op = "storage.GetTask"
 
 	query, args, err := sq.
@@ -143,6 +244,7 @@ func (s *Storage) GetTask(ctx context.Context, id int64) (*entity.Task, error) {
 		LeftJoin("tags tag ON tt.tag_id = tag.id").
 		Where(sq.Eq{"t.id": id}).
 		Where(sq.Eq{"t.is_archived": false}).
+		Where(sq.Eq{"t.user_id": userID}).
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -402,7 +504,7 @@ func (s *Storage) ArchiveTask(ctx context.Context, userID uuid.UUID, taskID int6
 		Update("tasks").
 		Set("is_archived", true).
 		Where(sq.Eq{"id": taskID, "user_id": userID}).
-		Suffix("RETURNING id, name, description, tags, priority, status, start_time, deadline, group_id, user_id, created_at, updated_at, is_archived").
+		Suffix("RETURNING id, name, description, priority, status, start_time, deadline, group_id, user_id, created_at, updated_at, is_archived").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -410,12 +512,28 @@ func (s *Storage) ArchiveTask(ctx context.Context, userID uuid.UUID, taskID int6
 		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
 	}
 
-	task, err := execTask(s.DB, ctx, query, args)
+	var result entity.Task
+
+	err = s.DB.QueryRow(ctx, query, args...).Scan(
+		&result.ID,
+		&result.Name,
+		&result.Description,
+		&result.Priority,
+		&result.Status,
+		&result.StartTime,
+		&result.Deadline,
+		&result.GroupID,
+		&result.UserID,
+		&result.CreatedAt,
+		&result.UpdatedAt,
+		&result.IsArchived,
+	)
+
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot get task: %s", op, err.Error()))
+		return nil, errors.New(fmt.Sprintf("%s: cannot exec query: %s", op, err.Error()))
 	}
 
-	return task, nil
+	return &result, nil
 }
 
 func (s *Storage) ArchiveOldTasks(ctx context.Context) (int64, error) {
@@ -442,31 +560,4 @@ func (s *Storage) ArchiveOldTasks(ctx context.Context) (int64, error) {
 	rowsAffected := result.RowsAffected()
 
 	return rowsAffected, nil
-}
-
-func execTask(DB *pgxpool.Pool, ctx context.Context, query string, args []interface{}) (*entity.Task, error) {
-	const op = "storage.ExecTask"
-
-	var result entity.Task
-
-	err := DB.QueryRow(ctx, query, args...).Scan(
-		&result.ID,
-		&result.Name,
-		&result.Description,
-		&result.Priority,
-		&result.Status,
-		&result.StartTime,
-		&result.Deadline,
-		&result.GroupID,
-		&result.UserID,
-		&result.CreatedAt,
-		&result.UpdatedAt,
-		&result.IsArchived,
-	)
-
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot exec query: %s", op, err.Error()))
-	}
-
-	return &result, nil
 }

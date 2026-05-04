@@ -17,7 +17,7 @@ func (t *TaskHandler) CreateTask(ctx context.Context, req *taskv1.CreateTaskRequ
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	var startTime time.Time
@@ -58,7 +58,7 @@ func (t *TaskHandler) UpdateTask(ctx context.Context, req *taskv1.UpdateTaskRequ
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	taskID := req.GetTaskId()
@@ -100,15 +100,15 @@ func (t *TaskHandler) DeleteTask(ctx context.Context, req *taskv1.DeleteTaskRequ
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return &taskv1.DeleteTaskResponse{Success: false}, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	taskID := req.GetTaskId()
 
-	_, err = t.uc.DeleteTask(ctx, userID, taskID)
+	err = t.uc.DeleteTask(ctx, userID, taskID)
 	if err != nil {
 		t.log.Error("Failed to delete task", "error", err, "operation", op)
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return &taskv1.DeleteTaskResponse{Success: false}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return &taskv1.DeleteTaskResponse{
@@ -119,9 +119,15 @@ func (t *TaskHandler) DeleteTask(ctx context.Context, req *taskv1.DeleteTaskRequ
 func (t *TaskHandler) GetTask(ctx context.Context, req *taskv1.GetTaskRequest) (*taskv1.GetTaskResponse, error) {
 	const op = "grpc.GetTask"
 
+	userID, err := extractUserID(ctx)
+	if err != nil {
+		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+
 	taskID := req.GetTaskId()
 
-	task, err := t.uc.GetTask(ctx, taskID)
+	task, err := t.uc.GetTask(ctx, taskID, userID)
 	if err != nil {
 		t.log.Error("failed to get task", "operation", op, "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to get task: %v", err)
@@ -138,7 +144,7 @@ func (t *TaskHandler) GetListTask(ctx context.Context, req *taskv1.GetListTasksR
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	priority := int(req.GetPriority())
@@ -167,5 +173,27 @@ func (t *TaskHandler) GetListTask(ctx context.Context, req *taskv1.GetListTasksR
 
 	return &taskv1.GetListTasksResponse{
 		Tasks: tasksResponse,
+	}, nil
+}
+
+func (t *TaskHandler) ArchiveTask(ctx context.Context, req *taskv1.ArchiveTaskRequest) (*taskv1.ArchiveTaskResponse, error) {
+	const op = "grpc.ArchiveTask"
+
+	userID, err := extractUserID(ctx)
+	if err != nil {
+		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	taskID := req.TaskId
+
+	task, err := t.uc.ArchiveTask(ctx, userID, taskID)
+	if err != nil {
+		t.log.Error("failed to archive task", "error", err, "operation", op)
+		return nil, status.Errorf(codes.Internal, "failed to archive task: %v", err)
+	}
+
+	return &taskv1.ArchiveTaskResponse{
+		Task: mapTask(task),
 	}, nil
 }

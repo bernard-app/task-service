@@ -30,10 +30,10 @@ func (u *UseCase) UpdateTag(ctx context.Context, tagID int64, tagName, tagColor 
 	return updatedTag, nil
 }
 
-func (u *UseCase) DeleteTag(ctx context.Context, tagID int64) error {
+func (u *UseCase) DeleteTag(ctx context.Context, tagID int64, userID uuid.UUID) error {
 	const op = "usecase.DeleteTag"
 
-	err := u.DB.DeleteTag(ctx, tagID)
+	err := u.DB.DeleteTag(ctx, tagID, userID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -41,10 +41,10 @@ func (u *UseCase) DeleteTag(ctx context.Context, tagID int64) error {
 	return nil
 }
 
-func (u *UseCase) GetTag(ctx context.Context, tagID int64) (*entity.Tag, error) {
+func (u *UseCase) GetTag(ctx context.Context, tagID int64, userID uuid.UUID) (*entity.Tag, error) {
 	const op = "usecase.GetTag"
 
-	tag, err := u.GetTag(ctx, tagID)
+	tag, err := u.DB.GetTag(ctx, tagID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -55,7 +55,7 @@ func (u *UseCase) GetTag(ctx context.Context, tagID int64) (*entity.Tag, error) 
 func (u *UseCase) GetTagList(ctx context.Context, userID uuid.UUID, limit, offset uint64) ([]*entity.Tag, error) {
 	const op = "usecase.GetTagList"
 
-	tags, err := u.GetTagList(ctx, userID, limit, offset)
+	tags, err := u.DB.GetTagList(ctx, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -63,10 +63,10 @@ func (u *UseCase) GetTagList(ctx context.Context, userID uuid.UUID, limit, offse
 	return tags, nil
 }
 
-func (u *UseCase) AddTagToTask(ctx context.Context, tagID int64, taskID int64) error {
+func (u *UseCase) AddTagToTask(ctx context.Context, tagID int64, taskID int64, userID uuid.UUID) error {
 	const op = "usecase.AddTagToTask"
 
-	err := u.AddTagToTask(ctx, tagID, taskID)
+	err := u.DB.AddTagToTask(ctx, tagID, taskID, userID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -74,10 +74,10 @@ func (u *UseCase) AddTagToTask(ctx context.Context, tagID int64, taskID int64) e
 	return nil
 }
 
-func (u *UseCase) RemoveTagFromTask(ctx context.Context, tagID int64, taskID int64) error {
+func (u *UseCase) RemoveTagFromTask(ctx context.Context, tagID int64, taskID int64, userID uuid.UUID) error {
 	const op = "usecase.RemoveTagFromTask"
 
-	err := u.RemoveTagFromTask(ctx, tagID, taskID)
+	err := u.DB.RemoveTagFromTask(ctx, tagID, taskID, userID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

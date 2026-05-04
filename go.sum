@@ -8,6 +8,8 @@ github.com/agiledragon/gomonkey/v2 v2.3.1 h1:k+UnUY0EMNYUFUAQVETGY9uUTxjMdnUkP0A
 github.com/agiledragon/gomonkey/v2 v2.3.1/go.mod h1:ap1AmDzcVOAz1YpeJ3TCzIgstoaWLA6jbbgxfB4w2iY=
 github.com/bernard-app/bernard-protos v0.0.3 h1:aPbYzYjqFfshTW8nJ/QAPNLmruJ41Og4KW4FDkK82Vw=
 github.com/bernard-app/bernard-protos v0.0.3/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
+github.com/bernard-app/bernard-protos v0.0.4 h1:xkS5+OBMmVCq7pY3TVoSieWKNGzeMkuJiQe2eCkUMPc=
+github.com/bernard-app/bernard-protos v0.0.4/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
 github.com/bsm/ginkgo/v2 v2.12.0/go.mod h1:SwYbGRRDovPVboqFv0tPTcG1sN61LM1Z4ARdbAV9g4c=
 github.com/bsm/gomega v1.27.10 h1:yeMWxP2pV2fG3FgAODIY8EiRE3dy0aeFYt4l7wh6yKA=

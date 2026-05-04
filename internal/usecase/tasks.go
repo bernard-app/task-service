@@ -4,6 +4,7 @@ import (
 	"bernard/internal/domain/entity"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +16,12 @@ func (u *UseCase) CreateTask(ctx context.Context, task entity.Task, tagsIDs []in
 	createdTask, err := u.DB.CreateTask(ctx, task, tagsIDs)
 	if err != nil {
 		u.Log.Error("error creating task", "op", op, "error", err)
+		return nil, err
+	}
+
+	createdTask, err = u.DB.GetTask(ctx, createdTask.ID, createdTask.UserID)
+	if err != nil {
+		u.Log.Error("error getting task", "op", op, "error", err)
 		return nil, err
 	}
 
@@ -33,29 +40,29 @@ func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 	return updatedTask, nil
 }
 
-func (u *UseCase) DeleteTask(ctx context.Context, userID uuid.UUID, taskID int64) (*entity.Task, error) {
+func (u *UseCase) DeleteTask(ctx context.Context, userID uuid.UUID, taskID int64) error {
 	const op = "usecase.DeleteTask"
 
 	if userID == uuid.Nil {
 		u.Log.Error("invalid userID", "op", op, "userID", userID, "taskID", taskID)
-		return nil, errors.New("invalid userID")
+		return fmt.Errorf("invalid userID")
 	}
 
 	if taskID <= 0 {
 		u.Log.Error("invalid taskID", "op", op, "taskID", taskID)
-		return nil, errors.New("invalid taskID")
+		return fmt.Errorf("invalid taskID")
 	}
 
-	deletedTask, err := u.DB.DeleteTask(ctx, userID, taskID)
+	err := u.DB.DeleteTask(ctx, userID, taskID)
 	if err != nil {
 		u.Log.Error("error deleting task", "op", op, "error", err)
-		return nil, err
+		return err
 	}
 
-	return deletedTask, nil
+	return nil
 }
 
-func (u *UseCase) GetTask(ctx context.Context, taskID int64) (*entity.Task, error) {
+func (u *UseCase) GetTask(ctx context.Context, taskID int64, userID uuid.UUID) (*entity.Task, error) {
 	const op = "usecase.GetTask"
 
 	if taskID <= 0 {
@@ -63,7 +70,7 @@ func (u *UseCase) GetTask(ctx context.Context, taskID int64) (*entity.Task, erro
 		return nil, errors.New("invalid taskID")
 	}
 
-	task, err := u.DB.GetTask(ctx, taskID)
+	task, err := u.DB.GetTask(ctx, taskID, userID)
 	if err != nil {
 		u.Log.Error("error getting task", "op", op, "error", err)
 		return nil, err
