@@ -2,7 +2,7 @@
 SELECT 'up SQL query';
 
 CREATE TABLE IF NOT EXISTS projects(
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
     user_id UUID NOT NULL,
@@ -10,18 +10,17 @@ CREATE TABLE IF NOT EXISTS projects(
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-
 CREATE TABLE IF NOT EXISTS groups(
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    project_id INT REFERENCES projects(id) ON DELETE CASCADE,
+    project_id BIGINT REFERENCES projects(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS tasks(
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
-    tags TEXT,
     priority INT NOT NULL,
     status TEXT,
     start_time TIMESTAMPTZ NOT NULL,
@@ -31,7 +30,21 @@ CREATE TABLE IF NOT EXISTS tasks(
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     is_archived BOOLEAN DEFAULT false
-    );
+);
+
+CREATE TABLE IF NOT EXISTS tags (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    color VARCHAR(7) NOT NULL,
+    is_system BOOLEAN DEFAULT false,
+    user_id UUID NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tasks_tags (
+    task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE,
+    tag_id BIGINT REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY(task_id, tag_id)
+);
 
 CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
 CREATE INDEX IF NOT EXISTS idx_groups_project_id ON groups(project_id);

@@ -20,10 +20,10 @@ func (u *UseCase) CreateProject(ctx context.Context, project entity.Project) (*e
 	return createdProject, nil
 }
 
-func (u *UseCase) UpdateProject(ctx context.Context, project entity.Project) (*entity.Project, error) {
+func (u *UseCase) UpdateProject(ctx context.Context, project entity.UpdateProjectRequest, projectID int64, userID uuid.UUID) (*entity.Project, error) {
 	const op = "storage.UpdateProject"
 
-	updatedProject, err := u.DB.UpdateProject(ctx, project)
+	updatedProject, err := u.DB.UpdateProject(ctx, project, projectID, userID)
 	if err != nil {
 		u.Log.Error("error updating project", "op", op, "error", err)
 		return nil, err
@@ -32,21 +32,21 @@ func (u *UseCase) UpdateProject(ctx context.Context, project entity.Project) (*e
 	return updatedProject, nil
 }
 
-func (u *UseCase) DeleteProject(ctx context.Context, projectID int64) (*entity.Project, error) {
+func (u *UseCase) DeleteProject(ctx context.Context, projectID int64, userID uuid.UUID) error {
 	const op = "storage.DeleteProject"
 
 	if projectID <= 0 {
 		u.Log.Error("invalid projectID", "op", op, "projectID", projectID)
-		return nil, errors.New("invalid project id")
+		return errors.New("invalid project id")
 	}
 
-	project, err := u.DB.DeleteProject(ctx, projectID)
+	err := u.DB.DeleteProject(ctx, projectID, userID)
 	if err != nil {
 		u.Log.Error("error deleting project", "op", op, "error", err)
-		return nil, err
+		return err
 	}
 
-	return project, nil
+	return nil
 }
 
 func (u *UseCase) GetProjectTree(ctx context.Context, projectID int64, userID uuid.UUID) (*entity.Project, error) {
