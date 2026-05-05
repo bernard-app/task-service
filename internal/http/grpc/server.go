@@ -10,11 +10,11 @@ import (
 
 type TaskHandler struct {
 	taskv1.UnimplementedTaskServiceServer
-	uc  usecase.UseCase
+	uc  *usecase.UseCase
 	log *slog.Logger
 }
 
-func Register(gRPC *grpc.Server, uc usecase.UseCase, log *slog.Logger) *TaskHandler {
+func Register(gRPC *grpc.Server, uc *usecase.UseCase, log *slog.Logger) *TaskHandler {
 	th := &TaskHandler{
 		uc:  uc,
 		log: log,

@@ -25,12 +25,12 @@ func (s *Storage) CreateTask(ctx context.Context, task entity.Task, tasksIDs []i
 		ToSql()
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	tx, err := s.DB.Begin(ctx)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot start transaction: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot start transaction: %s", op, err.Error())
 	}
 	defer tx.Rollback(ctx)
 
@@ -50,7 +50,7 @@ func (s *Storage) CreateTask(ctx context.Context, task entity.Task, tasksIDs []i
 			return nil, fmt.Errorf("%s: group does not exists", op)
 		}
 
-		return nil, errors.New(fmt.Sprintf("%s: cannot scan row: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot scan row: %s", op, err.Error())
 	}
 
 	if len(tasksIDs) > 0 {
@@ -61,7 +61,7 @@ func (s *Storage) CreateTask(ctx context.Context, task entity.Task, tasksIDs []i
 
 		query, args, err = tagsBuilder.PlaceholderFormat(sq.Dollar).ToSql()
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+			return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 		}
 
 		_, err = tx.Exec(ctx, query, args...)
@@ -78,7 +78,7 @@ func (s *Storage) CreateTask(ctx context.Context, task entity.Task, tasksIDs []i
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot commit transaction: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot commit transaction: %s", op, err.Error())
 	}
 
 	return &createdTask, nil
@@ -124,7 +124,7 @@ func (s *Storage) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 	}
 
 	if !hasUpdate {
-		return nil, fmt.Errorf(op, "cannot update task")
+		return nil, fmt.Errorf("cannot update task. op: %s", op)
 	}
 
 	builder = builder.Set("updated_at", time.Now())
@@ -249,7 +249,7 @@ func (s *Storage) GetTask(ctx context.Context, id int64, userID uuid.UUID) (*ent
 		ToSql()
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	var task entity.Task
@@ -257,7 +257,7 @@ func (s *Storage) GetTask(ctx context.Context, id int64, userID uuid.UUID) (*ent
 
 	rows, err := s.DB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot query rows: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot query rows: %s", op, err.Error())
 	}
 
 	defer rows.Close()
@@ -280,7 +280,7 @@ func (s *Storage) GetTask(ctx context.Context, id int64, userID uuid.UUID) (*ent
 			&tagID, &tagName, &tagColor, &tagUserID, // <- Possible NULL
 		)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("%s: cannot scan row: %s", op, err.Error()))
+			return nil, fmt.Errorf("%s: cannot scan row: %s", op, err.Error())
 		}
 
 		if tDesc != nil {
@@ -316,7 +316,7 @@ func (s *Storage) GetTask(ctx context.Context, id int64, userID uuid.UUID) (*ent
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot iterate rows: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot iterate rows: %s", op, err.Error())
 	}
 
 	if !hasTask {
@@ -352,7 +352,7 @@ func (s *Storage) ListTasks(ctx context.Context, userID uuid.UUID, limit, offset
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	return getTasks(s.DB, ctx, query, args)
@@ -372,7 +372,7 @@ func (s *Storage) GetTasksByPriority(ctx context.Context, userID uuid.UUID, prio
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	return getTasks(s.DB, ctx, query, args)
@@ -392,7 +392,7 @@ func (s *Storage) GetTasksByDate(ctx context.Context, userID uuid.UUID, from, to
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	return getTasks(s.DB, ctx, query, args)
@@ -410,7 +410,7 @@ func (s *Storage) GetTasksByTag(ctx context.Context, userID uuid.UUID, tagID int
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	return getTasks(s.DB, ctx, query, args)
@@ -509,7 +509,7 @@ func (s *Storage) ArchiveTask(ctx context.Context, userID uuid.UUID, taskID int6
 		ToSql()
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	var result entity.Task
@@ -530,7 +530,7 @@ func (s *Storage) ArchiveTask(ctx context.Context, userID uuid.UUID, taskID int6
 	)
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot exec query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot exec query: %s", op, err.Error())
 	}
 
 	return &result, nil
@@ -549,12 +549,12 @@ func (s *Storage) ArchiveOldTasks(ctx context.Context) (int64, error) {
 		ToSql()
 
 	if err != nil {
-		return 0, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return 0, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	result, err := s.DB.Exec(ctx, query, args...)
 	if err != nil {
-		return 0, errors.New(fmt.Sprintf("%s: cannot get result: %s", op, err.Error()))
+		return 0, fmt.Errorf("%s: cannot get result: %s", op, err.Error())
 	}
 
 	rowsAffected := result.RowsAffected()

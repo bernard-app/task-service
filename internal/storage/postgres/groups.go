@@ -23,7 +23,7 @@ func (s *Storage) CreateGroup(ctx context.Context, group entity.Group) (*entity.
 		ToSql()
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("cannot build query. op: %s, error: %w", op, err)
 	}
 
 	var createdGroup entity.Group
@@ -33,10 +33,10 @@ func (s *Storage) CreateGroup(ctx context.Context, group entity.Group) (*entity.
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, errors.New(fmt.Sprintf("%s: group already exists", op))
+			return nil, fmt.Errorf("project does not exists. op: %s, error: %w", op, err)
 		}
 
-		return nil, errors.New(fmt.Sprintf("%s: cannot create group: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot create group: %w", op, err)
 	}
 
 	return &createdGroup, nil
@@ -61,7 +61,7 @@ func (s *Storage) UpdateGroup(ctx context.Context, group entity.UpdateGroupReque
 	}
 
 	if !hasUpdate {
-		return nil, errors.New(fmt.Sprintf("%s: cannot update group: %s", op, "no update available"))
+		return nil, fmt.Errorf("%s: cannot update group: %s", op, "no update available")
 	}
 
 	query, args, err := builder.
@@ -69,7 +69,7 @@ func (s *Storage) UpdateGroup(ctx context.Context, group entity.UpdateGroupReque
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	var UpdatedGroup entity.Group
@@ -85,7 +85,7 @@ func (s *Storage) UpdateGroup(ctx context.Context, group entity.UpdateGroupReque
 			}
 		}
 
-		return nil, errors.New(fmt.Sprintf("%s: cannot update group: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot update group: %s", op, err.Error())
 	}
 
 	return &UpdatedGroup, nil

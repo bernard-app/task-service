@@ -24,7 +24,7 @@ func (s *Storage) CreateProject(ctx context.Context, project entity.Project) (*e
 		ToSql()
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	var createdProject entity.Project
@@ -34,10 +34,10 @@ func (s *Storage) CreateProject(ctx context.Context, project entity.Project) (*e
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, errors.New(fmt.Sprintf("%s: project already exists", op))
+			return nil, fmt.Errorf("%s: project already exists", op)
 		}
 
-		return nil, errors.New(fmt.Sprintf("%s: cannot create project: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot create project: %s", op, err.Error())
 	}
 
 	return &createdProject, nil
@@ -71,14 +71,14 @@ func (s *Storage) UpdateProject(ctx context.Context, project entity.UpdateProjec
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	var updatedProject entity.Project
 
 	err = s.DB.QueryRow(ctx, query, args...).Scan(&updatedProject.ID, &updatedProject.Name, updatedProject.Description, &updatedProject.UserID)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot update project: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot update project: %s", op, err.Error())
 	}
 
 	return &updatedProject, nil
@@ -95,14 +95,14 @@ func (s *Storage) DeleteProject(ctx context.Context, projectID int64, userID uui
 		ToSql()
 
 	if err != nil {
-		return errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	var deletedProject entity.Project
 
 	err = s.DB.QueryRow(ctx, query, args...).Scan(&deletedProject.ID, &deletedProject.Name, deletedProject.Description, &deletedProject.UserID)
 	if err != nil {
-		return errors.New(fmt.Sprintf("%s: cannot delete project: %s", op, err.Error()))
+		return fmt.Errorf("%s: cannot delete project: %s", op, err.Error())
 	}
 
 	return nil
@@ -132,7 +132,7 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 		ToSql()
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	var project entity.Project
@@ -144,7 +144,7 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 
 	rows, err := s.DB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot query project: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot query project: %s", op, err.Error())
 	}
 	defer rows.Close()
 
@@ -169,7 +169,7 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 			&tagID, &tagName, &tagColor,
 		)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("%s: cannot scan project: %s", op, err.Error()))
+			return nil, fmt.Errorf("%s: cannot scan project: %s", op, err.Error())
 		}
 
 		if gID != nil {
@@ -225,7 +225,7 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot iterate projects: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot iterate projects: %s", op, err.Error())
 	}
 
 	if !hasProject {
@@ -254,14 +254,14 @@ func (s *Storage) GetProjects(ctx context.Context, userID uuid.UUID, limit, offs
 		ToSql()
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot build query: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
 	var projects []*entity.Project
 
 	rows, err := s.DB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot read projects: %s", op, err.Error()))
+		return nil, fmt.Errorf("%s: cannot read projects: %s", op, err.Error())
 	}
 
 	defer rows.Close()
@@ -270,7 +270,7 @@ func (s *Storage) GetProjects(ctx context.Context, userID uuid.UUID, limit, offs
 		var project entity.Project
 
 		if err = rows.Scan(&project.ID, &project.Name, &project.Description, &project.UserID); err != nil {
-			return nil, errors.New(fmt.Sprintf("%s: cannot read project: %s", op, err.Error()))
+			return nil, fmt.Errorf("%s: cannot read project: %s", op, err.Error())
 		}
 
 		projects = append(projects, &project)

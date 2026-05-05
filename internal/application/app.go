@@ -3,20 +3,21 @@ package application
 import (
 	"bernard/internal/application/dicontainer"
 	"bernard/internal/config"
+	th "bernard/internal/http/grpc"
 	"context"
-	"errors"
 	"log/slog"
-	"net/http"
+	"net"
 	"sync"
-	"time"
+
+	"google.golang.org/grpc"
 )
 
 type Application struct {
-	cfg       *config.Config
-	log       *slog.Logger
-	container *dicontainer.Container
-	server    *http.Server
-	wg        *sync.WaitGroup
+	cfg        *config.Config
+	log        *slog.Logger
+	container  *dicontainer.Container
+	grpcServer *grpc.Server
+	wg         *sync.WaitGroup
 }
 
 func NewApplication(cfg *config.Config, log *slog.Logger) *Application {
@@ -42,13 +43,15 @@ func (a *Application) Run(ctx context.Context) error {
 		return err
 	}
 
-	a.server = &http.Server{
-		Addr:         a.cfg.HTTPServer.Address,
-		Handler:      a.container.HTTPRouter,
-		ReadTimeout:  a.cfg.HTTPServer.Timeout,
-		WriteTimeout: a.cfg.HTTPServer.Timeout,
-		IdleTimeout:  a.cfg.HTTPServer.IdleTimeout,
+	listener, err := net.Listen("tcp", a.cfg.HTTPServer.Address)
+	if err != nil {
+		a.log.Error("failed to listen", "error", err)
+		return err
 	}
+
+	a.grpcServer = grpc.NewServer()
+
+	th.Register(a.grpcServer, a.container.UseCase, a.log)
 
 	a.wg.Add(1)
 	go func() {
@@ -61,9 +64,8 @@ func (a *Application) Run(ctx context.Context) error {
 		defer a.wg.Done()
 		a.log.Info("Run: server started", "address", a.cfg.HTTPServer.Address)
 
-		err = a.server.ListenAndServe()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			a.log.Error("ListenAndServe crashed", "error", err)
+		if err := a.grpcServer.Serve(listener); err != nil {
+			a.log.Error("failed to serve", "error", err)
 		}
 	}()
 
@@ -73,14 +75,8 @@ func (a *Application) Run(ctx context.Context) error {
 func (a *Application) Shutdown() {
 	a.log.Info("Shutdown")
 
-	srvCtx, srvCancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer srvCancel()
-
-	err := a.server.Shutdown(srvCtx)
-	if err != nil {
-		a.log.Error("Shutdown: failed to shutdown server", "error", err)
-	}
-
+	a.grpcServer.GracefulStop()
+	a.container.DB.Close()
 	a.wg.Wait()
 
 	a.log.Info("Shutdown completed gracefully")

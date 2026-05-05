@@ -5,6 +5,7 @@ import (
 	"bernard/internal/domain/entity"
 	"bernard/internal/usecase"
 	mocks "bernard/internal/usecase/mocks"
+	"bernard/utils"
 	"context"
 	"log/slog"
 	"os"
@@ -87,8 +88,10 @@ func TestUseCase_UpdateProject(t *testing.T) {
 	}
 
 	type args struct {
-		ctx     context.Context
-		project entity.Project
+		ctx       context.Context
+		project   entity.UpdateProjectRequest
+		projectID int64
+		userID    uuid.UUID
 	}
 
 	tests := []struct {
@@ -102,12 +105,16 @@ func TestUseCase_UpdateProject(t *testing.T) {
 			name: "success",
 			args: args{
 				ctx: context.Background(),
-				project: entity.Project{
-					Name: "test",
+				project: entity.UpdateProjectRequest{
+					Name:        utils.Ptr("test"),
+					Description: utils.Ptr("test"),
 				},
+				projectID: 1,
+				userID:    uuid.New(),
 			},
 			want: &entity.Project{
-				Name: "test",
+				Name:        "test",
+				Description: utils.Ptr("test"),
 			},
 			wantErr: false,
 		},
@@ -127,7 +134,7 @@ func TestUseCase_UpdateProject(t *testing.T) {
 				DB:     mockStorage,
 			}
 
-			got, err := u.UpdateProject(tt.args.ctx, tt.args.project)
+			got, err := u.UpdateProject(tt.args.ctx, tt.args.project, tt.args.projectID, tt.args.userID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateProject() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -153,6 +160,7 @@ func TestUseCase_DeleteProject(t *testing.T) {
 	type args struct {
 		ctx       context.Context
 		projectID int64
+		userID    uuid.UUID
 	}
 
 	tests := []struct {
@@ -167,9 +175,7 @@ func TestUseCase_DeleteProject(t *testing.T) {
 			args: args{
 				ctx:       context.Background(),
 				projectID: 1,
-			},
-			want: &entity.Project{
-				ID: 1,
+				userID:    uuid.New(),
 			},
 			wantErr: false,
 		},
@@ -178,8 +184,8 @@ func TestUseCase_DeleteProject(t *testing.T) {
 			args: args{
 				ctx:       context.Background(),
 				projectID: -1,
+				userID:    uuid.New(),
 			},
-			want:    nil,
 			wantErr: true,
 		},
 	}
@@ -198,13 +204,9 @@ func TestUseCase_DeleteProject(t *testing.T) {
 				DB:     mockStorage,
 			}
 
-			got, err := u.DeleteProject(tt.args.ctx, tt.args.projectID)
+			err := u.DeleteProject(tt.args.ctx, tt.args.projectID, tt.args.userID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DeleteProject() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if tt.want != nil {
-				require.Equal(t, tt.want, got)
 			}
 
 			if tt.wantErr {
