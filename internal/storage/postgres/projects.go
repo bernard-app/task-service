@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -15,6 +14,8 @@ import (
 func (s *Storage) CreateProject(ctx context.Context, project entity.Project) (*entity.Project, error) {
 	const op = "storage.CreateProject"
 
+	tx := s.getEngine(ctx)
+	
 	query, args, err := sq.
 		Insert("projects").
 		Columns("name", "description", "user_id").
@@ -29,7 +30,7 @@ func (s *Storage) CreateProject(ctx context.Context, project entity.Project) (*e
 
 	var createdProject entity.Project
 
-	err = s.DB.QueryRow(ctx, query, args...).Scan(&createdProject.ID, &createdProject.Name, &createdProject.Description, &createdProject.UserID)
+	err = tx.QueryRow(ctx, query, args...).Scan(&createdProject.ID, &createdProject.Name, &createdProject.Description, &createdProject.UserID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
@@ -46,6 +47,8 @@ func (s *Storage) CreateProject(ctx context.Context, project entity.Project) (*e
 func (s *Storage) UpdateProject(ctx context.Context, project entity.UpdateProjectRequest, projectID int64, userID uuid.UUID) (*entity.Project, error) {
 	const op = "storage.UpdateProject"
 
+	tx := s.getEngine(ctx)
+	
 	builder := sq.
 		Update("projects").
 		Where(sq.Eq{"id": projectID, "user_id": userID})
@@ -76,7 +79,7 @@ func (s *Storage) UpdateProject(ctx context.Context, project entity.UpdateProjec
 
 	var updatedProject entity.Project
 
-	err = s.DB.QueryRow(ctx, query, args...).Scan(&updatedProject.ID, &updatedProject.Name, updatedProject.Description, &updatedProject.UserID)
+	err = tx.QueryRow(ctx, query, args...).Scan(&updatedProject.ID, &updatedProject.Name, updatedProject.Description, &updatedProject.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: cannot update project: %s", op, err.Error())
 	}
@@ -87,6 +90,8 @@ func (s *Storage) UpdateProject(ctx context.Context, project entity.UpdateProjec
 func (s *Storage) DeleteProject(ctx context.Context, projectID int64, userID uuid.UUID) error {
 	const op = "storage.DeleteProject"
 
+	tx := s.getEngine(ctx)
+	
 	query, args, err := sq.
 		Delete("groups").
 		Where(sq.Eq{"id": projectID, "user_id": userID}).
@@ -100,7 +105,7 @@ func (s *Storage) DeleteProject(ctx context.Context, projectID int64, userID uui
 
 	var deletedProject entity.Project
 
-	err = s.DB.QueryRow(ctx, query, args...).Scan(&deletedProject.ID, &deletedProject.Name, deletedProject.Description, &deletedProject.UserID)
+	err = tx.QueryRow(ctx, query, args...).Scan(&deletedProject.ID, &deletedProject.Name, deletedProject.Description, &deletedProject.UserID)
 	if err != nil {
 		return fmt.Errorf("%s: cannot delete project: %s", op, err.Error())
 	}
@@ -108,26 +113,15 @@ func (s *Storage) DeleteProject(ctx context.Context, projectID int64, userID uui
 	return nil
 }
 
-func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uuid.UUID) (*entity.Project, error) {
+func (s *Storage) GetProject(ctx context.Context, projectID int64, userID uuid.UUID) (*entity.Project, error) {
 	const op = "storage.GetProject"
 
+	tx := s.getEngine(ctx)
+	
 	query, args, err := sq.
-		Select(
-			"p.id", "p.name", "p.description", "p.user_id",
-			"g.id", "g.name", "g.project_id",
-			"t.id", "t.name", "t.description", "t.priority", "t.status", "t.start_time", "t.deadline", "t.group_id", "t.created_at", "t.updated_at",
-			"tag.id", "tag.name", "tag.color",
-		).
-		From("projects p").
-		LeftJoin("groups g ON p.id = g.project_id").
-		LeftJoin("tasks t ON g.id = t.group_id AND t.is_archived = false AND t.user_id = p.user_id").
-		LeftJoin("tasks_tags tt ON t.id = tt.task_id").
-		LeftJoin("tags tag ON tt.tag_id = tags.id").
-		Where(sq.And{
-			sq.Eq{"p.id": projectID},
-			sq.Eq{"p.user_id": userID},
-		}).
-		OrderBy("g.id ASC", "t.created_at DESC").
+		Select("id", "name", "description", "user_id",).
+		From("projects").
+		Where(sq.Eq{"id": projectID, "user_id": userID}).
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -136,107 +130,11 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 	}
 
 	var project entity.Project
-	groupsMap := make(map[int64]*entity.Group)
-	var groupIDsOrder []int64
-	projectTaskCount := 0
-	tasksMap := make(map[int64]*entity.Task)
-	hasProject := false
-
-	rows, err := s.DB.Query(ctx, query, args...)
+	
+	err = tx.QueryRow(ctx, query, args...).Scan(&project.ID, &project.Name, &project.Description, &project.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("%s: cannot query project: %s", op, err.Error())
+		return nil, fmt.Errorf("%s: cannot query row: %w", op, err)
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		hasProject = true
-
-		var gID, gProjectID *int64
-		var gName *string
-
-		var tID, tGroupID *int64
-		var tName, tDesc, tStatus *string
-		var tPriority *int
-		var tStartTime, tDeadline, tCreatedAt, tUpdatedAt *time.Time
-
-		var tagID *int64
-		var tagName, tagColor *string
-
-		err = rows.Scan(
-			&project.ID, &project.Name, &project.Description, &project.UserID,
-			&gID, &gName, &gProjectID,
-			&tID, &tName, &tDesc, &tPriority, &tStatus, &tStartTime, &tDeadline, &tGroupID, &tCreatedAt, &tUpdatedAt,
-			&tagID, &tagName, &tagColor,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("%s: cannot scan project: %s", op, err.Error())
-		}
-
-		if gID != nil {
-			group, exists := groupsMap[*gID]
-
-			if !exists {
-				group = &entity.Group{
-					ID:        *gID,
-					Name:      *gName,
-					ProjectID: *gProjectID,
-					TaskCount: 0,
-					Tasks:     make([]*entity.Task, 0),
-				}
-				groupsMap[*gID] = group
-				groupIDsOrder = append(groupIDsOrder, *gID)
-			}
-
-			if tID != nil {
-				task, ok := tasksMap[*tID]
-
-				if !ok {
-					task = &entity.Task{
-						ID:          *tID,
-						Name:        *tName,
-						Description: tDesc,
-						Priority:    tPriority,
-						Status:      tStatus,
-						StartTime:   tStartTime,
-						Deadline:    tDeadline,
-						CreatedAt:   *tCreatedAt,
-						UpdatedAt:   *tUpdatedAt,
-						GroupID:     *tGroupID,
-					}
-
-					tasksMap[*tID] = task
-
-					group.Tasks = append(group.Tasks, task)
-					group.TaskCount++
-					projectTaskCount++
-				}
-
-				if tagID != nil {
-					tag := &entity.Tag{
-						ID:    *tagID,
-						Name:  *tagName,
-						Color: *tagColor,
-					}
-
-					task.Tags = append(task.Tags, tag)
-				}
-			}
-		}
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("%s: cannot iterate projects: %s", op, err.Error())
-	}
-
-	if !hasProject {
-		return nil, fmt.Errorf("%s: project not found", op)
-	}
-
-	for _, id := range groupIDsOrder {
-		project.Groups = append(project.Groups, groupsMap[id])
-	}
-
-	project.TaskCount = projectTaskCount
 
 	return &project, nil
 }
@@ -244,6 +142,8 @@ func (s *Storage) GetProjectTree(ctx context.Context, projectID int64, userID uu
 func (s *Storage) GetProjects(ctx context.Context, userID uuid.UUID, limit, offset uint64) ([]*entity.Project, error) {
 	const op = "storage.GetProjects"
 
+	tx := s.getEngine(ctx)
+	
 	query, args, err := sq.
 		Select("id", "name", "description", "user_id").
 		From("projects").
@@ -259,7 +159,7 @@ func (s *Storage) GetProjects(ctx context.Context, userID uuid.UUID, limit, offs
 
 	var projects []*entity.Project
 
-	rows, err := s.DB.Query(ctx, query, args...)
+	rows, err := tx.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%s: cannot read projects: %s", op, err.Error())
 	}
@@ -268,8 +168,9 @@ func (s *Storage) GetProjects(ctx context.Context, userID uuid.UUID, limit, offs
 
 	for rows.Next() {
 		var project entity.Project
-
-		if err = rows.Scan(&project.ID, &project.Name, &project.Description, &project.UserID); err != nil {
+		
+		err:= rows.Scan(&project.ID, &project.Name, &project.Description, &project.UserID)
+		if err != nil {
 			return nil, fmt.Errorf("%s: cannot read project: %s", op, err.Error())
 		}
 

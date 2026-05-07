@@ -1,7 +1,6 @@
 package usecase_test
 
 import (
-	"bernard/internal/config"
 	"bernard/internal/domain/entity"
 	"bernard/internal/usecase"
 	mocks "bernard/internal/usecase/mocks"
@@ -19,7 +18,6 @@ import (
 
 func TestUseCase_CreateTask(t *testing.T) {
 	type fields struct {
-		config *config.Config
 		log    *slog.Logger
 		db     *mocks.MockStorage
 	}
@@ -57,14 +55,12 @@ func TestUseCase_CreateTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("CreateTask", tt.args.ctx, tt.args.task).Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
@@ -87,7 +83,6 @@ func TestUseCase_CreateTask(t *testing.T) {
 
 func TestUseCase_UpdateTask(t *testing.T) {
 	type fields struct {
-		config *config.Config
 		log    *slog.Logger
 		db     *mocks.MockStorage
 	}
@@ -127,14 +122,12 @@ func TestUseCase_UpdateTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("UpdateTask", tt.args.ctx, tt.args.task).Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
@@ -157,7 +150,6 @@ func TestUseCase_UpdateTask(t *testing.T) {
 
 func TestUseCase_DeleteTask(t *testing.T) {
 	type fields struct {
-		config *config.Config
 		log    *slog.Logger
 		db     *mocks.MockStorage
 	}
@@ -211,14 +203,12 @@ func TestUseCase_DeleteTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("DeleteTask", tt.args.ctx, tt.args.userID, tt.args.taskID).Maybe().Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
@@ -237,7 +227,6 @@ func TestUseCase_DeleteTask(t *testing.T) {
 
 func TestUseCase_GetTask(t *testing.T) {
 	type fields struct {
-		config *config.Config
 		log    *slog.Logger
 		db     *mocks.MockStorage
 	}
@@ -282,14 +271,12 @@ func TestUseCase_GetTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("GetTask", tt.args.ctx, tt.args.taskID).Maybe().Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
@@ -312,7 +299,6 @@ func TestUseCase_GetTask(t *testing.T) {
 
 func TestUseCase_GetListTask(t *testing.T) {
 	type fields struct {
-		config *config.Config
 		log    *slog.Logger
 		db     *mocks.MockStorage
 	}
@@ -398,14 +384,12 @@ func TestUseCase_GetListTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("ListTasks", tt.args.ctx, mock.Anything).Maybe().Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}

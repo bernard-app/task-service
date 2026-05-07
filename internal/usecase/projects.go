@@ -49,18 +49,23 @@ func (u *UseCase) DeleteProject(ctx context.Context, projectID int64, userID uui
 	return nil
 }
 
-func (u *UseCase) GetProjectTree(ctx context.Context, projectID int64, userID uuid.UUID) (*entity.Project, error) {
+func (u *UseCase) GetProject(ctx context.Context, projectID int64, userID uuid.UUID, limit, offset uint64) (*entity.Project, error) {
 	const op = "storage.GetProject"
 
-	if projectID <= 0 {
-		u.Log.Error("invalid projectID", "op", op, "projectID", projectID)
-		return nil, errors.New("invalid project id")
-	}
-
-	project, err := u.DB.GetProjectTree(ctx, projectID, userID)
+	project, err := u.DB.GetProject(ctx, projectID, userID)
 	if err != nil {
 		u.Log.Error("error getting project", "op", op, "error", err)
 		return nil, err
+	}
+
+	project.Groups, err = u.GetProjectGroups(ctx, projectID, userID, limit, offset)
+	if err != nil {
+		u.Log.Error("error getting projet groups", "op", op, "error", err)
+		return nil, err
+	}
+
+	for _, group := range project.Groups {
+		project.TaskCount += group.TaskCount
 	}
 
 	return project, nil
@@ -68,11 +73,6 @@ func (u *UseCase) GetProjectTree(ctx context.Context, projectID int64, userID uu
 
 func (u *UseCase) GetProjects(ctx context.Context, userID uuid.UUID, limit, offset uint64) ([]*entity.Project, error) {
 	const op = "storage.GetProjects"
-
-	if userID == uuid.Nil {
-		u.Log.Error("invalid userID", "op", op, "userID", userID)
-		return nil, errors.New("invalid userID")
-	}
 
 	projects, err := u.DB.GetProjects(ctx, userID, limit, offset)
 	if err != nil {

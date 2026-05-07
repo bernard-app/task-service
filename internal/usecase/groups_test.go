@@ -1,7 +1,6 @@
 package usecase_test
 
 import (
-	"bernard/internal/config"
 	"bernard/internal/domain/entity"
 	"bernard/internal/usecase"
 	"bernard/utils"
@@ -18,7 +17,6 @@ import (
 
 func TestUseCase_CreateGroup(t *testing.T) {
 	type fields struct {
-		config *config.Config
 		log    *slog.Logger
 		db     *mocks.MockStorage
 	}
@@ -58,14 +56,12 @@ func TestUseCase_CreateGroup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("CreateGroup", tt.args.ctx, tt.args.group).Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
@@ -88,7 +84,6 @@ func TestUseCase_CreateGroup(t *testing.T) {
 
 func TestUseCase_UpdateGroup(t *testing.T) {
 	type fields struct {
-		config *config.Config
 		log    *slog.Logger
 		db     *mocks.MockStorage
 	}
@@ -128,14 +123,12 @@ func TestUseCase_UpdateGroup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("UpdateGroup", tt.args.ctx, tt.args.group).Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
@@ -158,7 +151,6 @@ func TestUseCase_UpdateGroup(t *testing.T) {
 
 func TestUseCase_DeleteGroup(t *testing.T) {
 	type fields struct {
-		config *config.Config
 		log    *slog.Logger
 		db     *mocks.MockStorage
 	}
@@ -197,14 +189,12 @@ func TestUseCase_DeleteGroup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("DeleteGroup", tt.args.ctx, tt.args.groupID).Maybe().Return(nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}

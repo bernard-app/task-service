@@ -24,6 +24,7 @@ func (u *UseCase) StartArchiveWorker(ctx context.Context) {
 			}
 		case <-ctx.Done():
 			u.Log.Info("context done, shutting down archive worker ", "op", op)
+			
 			return
 		}
 	}

@@ -4,7 +4,7 @@ import (
 	"bernard/internal/domain/entity"
 	"context"
 	"fmt"
-
+	
 	"github.com/google/uuid"
 )
 
@@ -63,10 +63,22 @@ func (u *UseCase) GetTagList(ctx context.Context, userID uuid.UUID, limit, offse
 	return tags, nil
 }
 
-func (u *UseCase) AddTagToTask(ctx context.Context, tagID int64, taskID int64, userID uuid.UUID) error {
+func (u *UseCase) GetTaskTags(ctx context.Context, taskID int64) ([]*entity.Tag, error) {
+	const op = "usecase.GetTaskTags"
+
+	tags, err := u.DB.GetTaskTags(ctx, taskID)
+	if err != nil {
+		u.Log.Error("error getting task tags", "op", op, "error", err)
+		return nil, err
+	}
+
+	return tags, nil
+}
+
+func (u *UseCase) AddTagsToTask(ctx context.Context, tagsIDs []int64, taskID int64) error {
 	const op = "usecase.AddTagToTask"
 
-	err := u.DB.AddTagToTask(ctx, tagID, taskID, userID)
+	err := u.DB.AddTagsToTask(ctx, tagsIDs, taskID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -74,10 +86,10 @@ func (u *UseCase) AddTagToTask(ctx context.Context, tagID int64, taskID int64, u
 	return nil
 }
 
-func (u *UseCase) RemoveTagFromTask(ctx context.Context, tagID int64, taskID int64, userID uuid.UUID) error {
+func (u *UseCase) RemoveTagsFromTask(ctx context.Context, tagsIDs []int64, taskID int64) error {
 	const op = "usecase.RemoveTagFromTask"
 
-	err := u.DB.RemoveTagFromTask(ctx, tagID, taskID, userID)
+	err := u.DB.RemoveTagsFromTask(ctx, tagsIDs, taskID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

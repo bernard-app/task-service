@@ -28,7 +28,8 @@ type Task struct {
 	Status      *string    `json:"status"`
 	StartTime   *time.Time `json:"start_time"`
 	Deadline    *time.Time `json:"deadline"`
-	GroupID     int64      `json:"group_id"`
+	GroupID     *int64     `json:"group_id"`
+	ProjectID   *int64     `json:"project_id"`
 	UserID      uuid.UUID  `json:"user_id"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
@@ -58,6 +59,7 @@ type Tag struct {
 	Name   string    `json:"name"`
 	Color  string    `json:"color"`
 	UserID uuid.UUID `json:"user_id"`
+	ProjectID int64 `json:"project_id"`
 }
 
 type UserTasksTab struct {
@@ -79,20 +81,9 @@ type TasksFilter struct {
 }
 
 type ErrorResponse struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Details interface{} `json:"details,omitempty"`
-}
-
-type CreateTaskRequest struct {
-	Name        string     `json:"name"`
-	Description *string    `json:"description"`
-	Tags        *string    `json:"tags"`
-	Priority    *int       `json:"priority"`
-	Status      *string    `json:"status"`
-	GroupID     int64      `json:"group_id"`
-	StartTime   *time.Time `json:"start_time"`
-	Deadline    *time.Time `json:"deadline"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Details any    `json:"details,omitempty"`
 }
 
 type UpdateTaskRequest struct {

@@ -53,21 +53,21 @@ func (a *Application) Run(ctx context.Context) error {
 
 	th.Register(a.grpcServer, a.container.UseCase, a.log)
 
-	a.wg.Add(1)
-	go func() {
-		defer a.wg.Done()
-		a.container.UseCase.StartArchiveWorker(ctx)
-	}()
+	a.wg.Go(
+		func() {
+			a.container.UseCase.StartArchiveWorker(ctx)
+		},
+	)
 
-	a.wg.Add(1)
-	go func() {
-		defer a.wg.Done()
-		a.log.Info("Run: server started", "address", a.cfg.HTTPServer.Address)
+	a.wg.Go(
+		func() {
+			a.log.Info("Run: server started", "address", a.cfg.HTTPServer.Address)
 
-		if err := a.grpcServer.Serve(listener); err != nil {
-			a.log.Error("failed to serve", "error", err)
-		}
-	}()
+			if err := a.grpcServer.Serve(listener); err != nil {
+				a.log.Error("failed to serve", "error", err)
+			}
+		},
+	)
 
 	return nil
 }
@@ -76,7 +76,11 @@ func (a *Application) Shutdown() {
 	a.log.Info("Shutdown")
 
 	a.grpcServer.GracefulStop()
-	a.container.DB.Close()
+	err := a.container.DB.Close()
+	if err != nil {
+		a.log.Error("error closing DB connection")
+	}
+	
 	a.wg.Wait()
 
 	a.log.Info("Shutdown completed gracefully")

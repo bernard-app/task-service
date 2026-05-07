@@ -4,7 +4,7 @@ go 1.25.8
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/bernard-app/bernard-protos v0.0.4
+	github.com/bernard-app/bernard-protos v0.0.9
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/google/uuid v1.6.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0

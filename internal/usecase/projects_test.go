@@ -18,7 +18,6 @@ import (
 
 func TestUseCase_CreateProject(t *testing.T) {
 	type fields struct {
-		cfg *config.Config
 		log *slog.Logger
 		db  *mocks.MockStorage
 	}
@@ -52,14 +51,12 @@ func TestUseCase_CreateProject(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("CreateProject", tt.args.ctx, tt.args.project).Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
@@ -82,7 +79,6 @@ func TestUseCase_CreateProject(t *testing.T) {
 
 func TestUseCase_UpdateProject(t *testing.T) {
 	type fields struct {
-		cfg *config.Config
 		log *slog.Logger
 		db  *mocks.MockStorage
 	}
@@ -122,14 +118,12 @@ func TestUseCase_UpdateProject(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("UpdateProject", tt.args.ctx, tt.args.project).Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
@@ -152,7 +146,6 @@ func TestUseCase_UpdateProject(t *testing.T) {
 
 func TestUseCase_DeleteProject(t *testing.T) {
 	type fields struct {
-		cfg *config.Config
 		log *slog.Logger
 		db  *mocks.MockStorage
 	}
@@ -192,14 +185,12 @@ func TestUseCase_DeleteProject(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("DeleteProject", tt.args.ctx, tt.args.projectID).Maybe().Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
@@ -227,6 +218,8 @@ func TestUseCase_GetProjectTree(t *testing.T) {
 		ctx       context.Context
 		projectID int64
 		userID    uuid.UUID
+		limit     uint64
+		offset    uint64
 	}
 
 	tests := []struct {
@@ -262,19 +255,17 @@ func TestUseCase_GetProjectTree(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
-			mockStorage.On("GetProjectTree", tt.args.ctx, tt.args.projectID, mock.Anything).Maybe().Return(tt.want, nil)
+			mockStorage.On("GetProject", tt.args.ctx, tt.args.projectID, mock.Anything).Maybe().Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
 
-			got, err := u.GetProjectTree(tt.args.ctx, tt.args.projectID, tt.args.userID)
+			got, err := u.GetProject(tt.args.ctx, tt.args.projectID, tt.args.userID, tt.args.limit, tt.args.offset)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetProjectTree() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -333,14 +324,12 @@ func TestUseCase_GetProjects(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("GetProjects", tt.args.ctx, tt.args.userID, tt.args.limit, tt.args.offset).Maybe().Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}

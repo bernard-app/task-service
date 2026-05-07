@@ -4,6 +4,16 @@ github.com/Masterminds/squirrel v1.5.4 h1:uUcX/aBc8O7Fg9kaISIUsHXdKuqehiXAMQTYX8
 github.com/Masterminds/squirrel v1.5.4/go.mod h1:NNaOrjSoIDfDA40n7sr2tPNZRfjzjA400rg+riTZj10=
 github.com/bernard-app/bernard-protos v0.0.4 h1:xkS5+OBMmVCq7pY3TVoSieWKNGzeMkuJiQe2eCkUMPc=
 github.com/bernard-app/bernard-protos v0.0.4/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
+github.com/bernard-app/bernard-protos v0.0.5 h1:fGaN6IZ504ySmlKuL9o6gREBoJ83NNNH/KNxVh7v8t8=
+github.com/bernard-app/bernard-protos v0.0.5/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
+github.com/bernard-app/bernard-protos v0.0.6 h1:UiSlGZyAhxmucup9r2IeTE21ZjsaMfV5wZrth1Y7blY=
+github.com/bernard-app/bernard-protos v0.0.6/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
+github.com/bernard-app/bernard-protos v0.0.7 h1:H25J8C4fj3druzPAxni+R3HvCxVSsdXy+Xxm5NyzGJs=
+github.com/bernard-app/bernard-protos v0.0.7/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
+github.com/bernard-app/bernard-protos v0.0.8 h1:d77lw7ckL/4wF0KeIaADNEg9Yq3vDBQq+OF50LxKwjM=
+github.com/bernard-app/bernard-protos v0.0.8/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
+github.com/bernard-app/bernard-protos v0.0.9 h1:gDKiSCj7YAt7tn9oUrohyCXC3yfVMqZIWK14QqGGXYk=
+github.com/bernard-app/bernard-protos v0.0.9/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
 github.com/bsm/ginkgo/v2 v2.12.0/go.mod h1:SwYbGRRDovPVboqFv0tPTcG1sN61LM1Z4ARdbAV9g4c=
 github.com/bsm/gomega v1.27.10 h1:yeMWxP2pV2fG3FgAODIY8EiRE3dy0aeFYt4l7wh6yKA=

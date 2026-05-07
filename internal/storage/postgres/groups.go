@@ -14,6 +14,8 @@ import (
 func (s *Storage) CreateGroup(ctx context.Context, group entity.Group) (*entity.Group, error) {
 	const op = "storage.CreateGroup"
 
+	tx := s.getEngine(ctx)
+
 	query, args, err := sq.
 		Insert("groups").
 		Columns("name, project_id, user_id").
@@ -28,7 +30,7 @@ func (s *Storage) CreateGroup(ctx context.Context, group entity.Group) (*entity.
 
 	var createdGroup entity.Group
 
-	err = s.DB.QueryRow(ctx, query, args...).Scan(&createdGroup.ID, &createdGroup.Name, &createdGroup.ProjectID, &createdGroup.UserID)
+	err = tx.QueryRow(ctx, query, args...).Scan(&createdGroup.ID, &createdGroup.Name, &createdGroup.ProjectID, &createdGroup.UserID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
@@ -44,6 +46,8 @@ func (s *Storage) CreateGroup(ctx context.Context, group entity.Group) (*entity.
 
 func (s *Storage) UpdateGroup(ctx context.Context, group entity.UpdateGroupRequest, userID uuid.UUID, groupID int64) (*entity.Group, error) {
 	const op = "storage.UpdateGroup"
+
+	tx := s.getEngine(ctx)
 
 	builder := sq.
 		Update("groups").
@@ -74,7 +78,7 @@ func (s *Storage) UpdateGroup(ctx context.Context, group entity.UpdateGroupReque
 
 	var UpdatedGroup entity.Group
 
-	err = s.DB.QueryRow(ctx, query, args...).
+	err = tx.QueryRow(ctx, query, args...).
 		Scan(&UpdatedGroup.ID, &UpdatedGroup.Name, &UpdatedGroup.ProjectID, &UpdatedGroup.UserID)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -94,6 +98,8 @@ func (s *Storage) UpdateGroup(ctx context.Context, group entity.UpdateGroupReque
 func (s *Storage) DeleteGroup(ctx context.Context, groupID int64, userID uuid.UUID) error {
 	const op = "storage.DeleteGroup"
 
+	tx := s.getEngine(ctx)
+
 	query, args, err := sq.
 		Delete("groups").
 		Where(sq.Eq{"id": groupID, "user_id": userID}).
@@ -104,7 +110,7 @@ func (s *Storage) DeleteGroup(ctx context.Context, groupID int64, userID uuid.UU
 		return fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
-	result, err := s.DB.Exec(ctx, query, args...)
+	result, err := tx.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("%s: cannot delete group: %s", op, err.Error())
 	}
@@ -116,4 +122,69 @@ func (s *Storage) DeleteGroup(ctx context.Context, groupID int64, userID uuid.UU
 	}
 
 	return nil
+}
+
+func (s *Storage) GetGroup(ctx context.Context, userID uuid.UUID, groupID int64) (*entity.Group, error) {
+	const op = "storage.GetGroup"
+
+	tx := s.getEngine(ctx)
+
+	query, args, err := sq.
+		Select("id", "name", "project_id").
+		From("groups").
+		Where(sq.Eq{"user_id": userID, "group_id": groupID}).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("error building query: %w. op: %s", err, op)
+	}
+
+	var group entity.Group
+
+	err = tx.QueryRow(ctx, query, args...).Scan(&group.ID, &group.Name, &group.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: cannot get group: %w", op, err)
+	}
+
+	return &group, nil
+}
+
+func (s *Storage) GetProjectGroups(ctx context.Context, userID uuid.UUID, projectID int64, limit, offset uint64) ([]*entity.Group, error) {
+	const op = "storage.GetProjectGroup"
+
+	tx := s.getEngine(ctx)
+
+	query, args, err := sq.
+		Select("id", "name", "project_id").
+		From("groups").
+		Where(sq.Eq{"project_id": projectID, "user_id": userID}).
+		Limit(limit).
+		Offset(offset).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("%s: cannot build query: %w", op, err)
+	}
+
+	var groups []*entity.Group
+
+	rows, err := tx.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("%s: cannot query row: %w", op, err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var group entity.Group
+
+		err = rows.Scan(&group.ID, &group.Name, &group.ProjectID)
+		if err != nil {
+			return nil, fmt.Errorf("%s: cannot scan row: %w", op, err)
+		}
+
+		groups = append(groups, &group)
+	}
+
+	return groups, nil
 }

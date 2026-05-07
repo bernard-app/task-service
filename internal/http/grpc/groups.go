@@ -15,6 +15,7 @@ func (t *TaskHandler) CreateGroup(ctx context.Context, req *taskv1.CreateGroupRe
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user id", "op", op, "error", err, "user_id", userID)
+
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -27,6 +28,7 @@ func (t *TaskHandler) CreateGroup(ctx context.Context, req *taskv1.CreateGroupRe
 	createdGroup, err := t.uc.CreateGroup(ctx, group)
 	if err != nil {
 		t.log.Error("Failed to create group", "op", op, "error", err, "user_id", userID)
+
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -45,6 +47,7 @@ func (t *TaskHandler) UpdateGroup(ctx context.Context, req *taskv1.UpdateGroupRe
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user id", "op", op, "error", err, "user_id", userID)
+
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -56,6 +59,7 @@ func (t *TaskHandler) UpdateGroup(ctx context.Context, req *taskv1.UpdateGroupRe
 	updatedGroup, err := t.uc.UpdateGroup(ctx, group, userID, req.GetId())
 	if err != nil {
 		t.log.Error("Failed to update group", "op", op, "error", err, "user_id", userID)
+
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -74,14 +78,79 @@ func (t *TaskHandler) DeleteGroup(ctx context.Context, req *taskv1.DeleteGroupRe
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user id", "op", op, "error", err, "user_id", userID)
+
 		return &taskv1.DeleteGroupResponse{Success: false}, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	err = t.uc.DeleteGroup(ctx, req.GetId(), userID)
 	if err != nil {
 		t.log.Error("Failed to delete group", "op", op, "error", err, "user_id", userID)
+
 		return &taskv1.DeleteGroupResponse{Success: false}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return &taskv1.DeleteGroupResponse{Success: true}, nil
+}
+
+func (t *TaskHandler) GetGroup(ctx context.Context, req *taskv1.GetGroupRequest) (*taskv1.GetGroupResponse, error) {
+	const op = "grpc.GetGroup"
+
+	userID, err := extractUserID(ctx)
+	if err != nil {
+		t.log.Error("Failed to extract user id", "op", op, "error", err, "user_id", userID)
+
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	groupID := req.GetGroupId()
+	limit := req.GetLimit()
+	offset := req.GetOffset()
+
+	group, err := t.uc.GetGroup(ctx, groupID, userID, limit, offset)
+	if err != nil {
+		t.log.Error("Failed to get group", "op", op, "error", err)
+
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &taskv1.GetGroupResponse{
+		Group: &taskv1.Group{
+			Id:        group.ID,
+			Name:      group.Name,
+			TaskCount: int64(group.TaskCount),
+			ProjectId: group.ProjectID,
+		},
+	}, nil
+}
+
+func (t *TaskHandler) GetProjectGroups(ctx context.Context, req *taskv1.GetProjectGroupsRequest) (*taskv1.GetProjectGroupsResponse, error) {
+	const op = "grpc.GetProjectGroups"
+
+	userID, err := extractUserID(ctx)
+	if err != nil {
+		t.log.Error("Failed to extract user id", "op", op, "error", err, "user_id", userID)
+
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	projectID := req.GetProjectId()
+	limit := req.GetLimit()
+	offset := req.GetOffset()
+
+	groups, err := t.uc.GetProjectGroups(ctx, projectID, userID, limit, offset)
+	if err != nil {
+		t.log.Error("Failed to get project groups", "op", op, "error", err)
+
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	var grpcGroups []*taskv1.Group
+
+	for _, group := range groups {
+		grpcGroups = append(grpcGroups, mapGroup(group))
+	}
+
+	return &taskv1.GetProjectGroupsResponse{
+		Groups: grpcGroups,
+	}, nil
 }

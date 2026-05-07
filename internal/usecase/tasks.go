@@ -4,7 +4,6 @@ import (
 	"bernard/internal/domain/entity"
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,15 +12,26 @@ import (
 func (u *UseCase) CreateTask(ctx context.Context, task entity.Task, tagsIDs []int64) (*entity.Task, error) {
 	const op = "usecase.CreateTask"
 
-	createdTask, err := u.DB.CreateTask(ctx, task, tagsIDs)
+	var createdTask *entity.Task
+	
+	err := u.Tx.ReadWrite(ctx, func(ctxTx context.Context) error {
+		var err error
+		
+		createdTask, err = u.DB.CreateTask(ctxTx, task)
+		if err != nil {
+			return err
+		}
+
+		err = u.DB.AddTagsToTask(ctxTx, tagsIDs, createdTask.ID)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		u.Log.Error("error creating task", "op", op, "error", err)
-		return nil, err
-	}
 
-	createdTask, err = u.DB.GetTask(ctx, createdTask.ID, createdTask.UserID)
-	if err != nil {
-		u.Log.Error("error getting task", "op", op, "error", err)
 		return nil, err
 	}
 
@@ -31,9 +41,40 @@ func (u *UseCase) CreateTask(ctx context.Context, task entity.Task, tagsIDs []in
 func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64) (*entity.Task, error) {
 	const op = "usecase.UpdateTask"
 
-	updatedTask, err := u.DB.UpdateTask(ctx, task, userID, taskID)
+	var updatedTask *entity.Task
+	
+	err := u.Tx.ReadWrite(ctx, func(ctxTx context.Context) error {
+		var err error
+
+		updatedTask, err = u.DB.UpdateTask(ctxTx, task, userID, taskID)
+		if err != nil {
+			return err
+		}
+
+		if task.TagsIDs != nil {
+			err = u.DB.RemoveAllTagsFromTask(ctxTx, taskID)
+			if err != nil {
+				return err
+			}
+
+			err = u.DB.AddTagsToTask(ctxTx, *task.TagsIDs, taskID)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
 		u.Log.Error("error updating task", "op", op, "error", err)
+	
+		return nil, err
+	}
+
+	updatedTask.Tags, err = u.DB.GetTaskTags(ctx, updatedTask.ID)
+	if err != nil {
+		u.Log.Error("error getting task tags", "op", op, "error", err)
+	
 		return nil, err
 	}
 
@@ -43,19 +84,10 @@ func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 func (u *UseCase) DeleteTask(ctx context.Context, userID uuid.UUID, taskID int64) error {
 	const op = "usecase.DeleteTask"
 
-	if userID == uuid.Nil {
-		u.Log.Error("invalid userID", "op", op, "userID", userID, "taskID", taskID)
-		return fmt.Errorf("invalid userID")
-	}
-
-	if taskID <= 0 {
-		u.Log.Error("invalid taskID", "op", op, "taskID", taskID)
-		return fmt.Errorf("invalid taskID")
-	}
-
 	err := u.DB.DeleteTask(ctx, userID, taskID)
 	if err != nil {
 		u.Log.Error("error deleting task", "op", op, "error", err)
+	
 		return err
 	}
 
@@ -65,28 +97,54 @@ func (u *UseCase) DeleteTask(ctx context.Context, userID uuid.UUID, taskID int64
 func (u *UseCase) GetTask(ctx context.Context, taskID int64, userID uuid.UUID) (*entity.Task, error) {
 	const op = "usecase.GetTask"
 
-	if taskID <= 0 {
-		u.Log.Error("invalid taskID", "op", op, "taskID", taskID)
-		return nil, errors.New("invalid taskID")
-	}
-
 	task, err := u.DB.GetTask(ctx, taskID, userID)
 	if err != nil {
 		u.Log.Error("error getting task", "op", op, "error", err)
+
+		return nil, err
+	}
+
+	task.Tags, err = u.DB.GetTaskTags(ctx, task.ID)
+	if err != nil {
+		u.Log.Error("error getting task tags", "op", op, "error", err)
+
 		return nil, err
 	}
 
 	return task, nil
 }
 
-func (u *UseCase) GetListTask(ctx context.Context, userID uuid.UUID, priority *int, tagID *int64, from, to *time.Time, limit, offset uint64) ([]*entity.UserTasksTab, error) {
+func (u *UseCase) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.UUID, limit, offset uint64) ([]*entity.Task, error) {
+	const op = "usecase.GetGroupTasks"
+
+	tasks, err := u.DB.GetGroupTasks(ctx, groupID, userID, limit, offset)
+	if err != nil {
+		u.Log.Error("error getting group tasks", "op", op, "error", err)
+	
+		return nil, err
+	}
+
+	for _, task := range tasks {
+		task.Tags, err = u.DB.GetTaskTags(ctx, task.ID)
+		if err != nil {
+			u.Log.Error("error gettig task tags", "op", op, "error", err)
+		
+			return nil, err
+		}
+	}
+
+	return tasks, nil
+}
+
+func (u *UseCase) GetListTask(ctx context.Context, userID uuid.UUID, priority *int, tagID *int64, from, to *time.Time, limit, offset uint64) ([]*entity.Task, error) {
 	const op = "usecase.GetTasks"
 
-	var tasks []*entity.UserTasksTab
+	var tasks []*entity.Task
 	var err error
 
 	if userID == uuid.Nil {
 		u.Log.Error("invalid userID", "op", op, "userID", userID, "priority", priority, "tag", tagID)
+
 		return nil, errors.New("invalid userID")
 	}
 
@@ -96,10 +154,14 @@ func (u *UseCase) GetListTask(ctx context.Context, userID uuid.UUID, priority *i
 	if priority != nil {
 		taskFilter.Priority = priority
 		taskFilter.FilterType = entity.PriorityFilter
-	} else if tagID != nil {
+	} 
+	
+	if tagID != nil {
 		taskFilter.Tag = tagID
 		taskFilter.FilterType = entity.TagFilter
-	} else if from != nil {
+	} 
+	
+	if from != nil {
 		taskFilter.From = from
 
 		if to != nil {

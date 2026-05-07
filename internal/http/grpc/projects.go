@@ -7,7 +7,6 @@ import (
 	taskv1 "github.com/bernard-app/bernard-protos/pkg/task_v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (t *TaskHandler) CreateProject(ctx context.Context, req *taskv1.CreateProjectRequest) (*taskv1.CreateProjectResponse, error) {
@@ -16,6 +15,7 @@ func (t *TaskHandler) CreateProject(ctx context.Context, req *taskv1.CreateProje
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("cannot extract userID from ctx", "op", op, "error", err)
+		
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -28,6 +28,7 @@ func (t *TaskHandler) CreateProject(ctx context.Context, req *taskv1.CreateProje
 	createdProject, err := t.uc.CreateProject(ctx, project)
 	if err != nil {
 		t.log.Error("cannot create project", "op", op, "error", err)
+
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -47,6 +48,7 @@ func (t *TaskHandler) UpdateProject(ctx context.Context, req *taskv1.UpdateProje
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("cannot extract userID from ctx", "op", op, "error", err)
+
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -58,6 +60,7 @@ func (t *TaskHandler) UpdateProject(ctx context.Context, req *taskv1.UpdateProje
 	updatedProject, err := t.uc.UpdateProject(ctx, project, req.GetId(), userID)
 	if err != nil {
 		t.log.Error("cannot update project", "op", op, "error", err)
+
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -77,102 +80,56 @@ func (t *TaskHandler) DeleteProject(ctx context.Context, req *taskv1.DeleteProje
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("cannot extract userID from ctx", "op", op, "error", err)
+	
 		return &taskv1.DeleteProjectResponse{Success: false}, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	err = t.uc.DeleteProject(ctx, req.GetId(), userID)
 	if err != nil {
 		t.log.Error("cannot delete project", "op", op, "error", err)
+	
 		return &taskv1.DeleteProjectResponse{Success: false}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return &taskv1.DeleteProjectResponse{Success: true}, nil
 }
 
-func (t *TaskHandler) GetProjectTree(ctx context.Context, req *taskv1.GetProjectTreeRequest) (*taskv1.GetProjectTreeResponse, error) {
-	const op = "grpc.GetProjectTree"
+func (t *TaskHandler) GetProject(ctx context.Context, req *taskv1.GetProjectRequest) (*taskv1.GetProjectResponse, error) {
+	const op = "grpc.GetProject"
 
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("cannot extract userID from ctx", "op", op, "error", err)
+
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
-	projectTree, err := t.uc.GetProjectTree(ctx, req.GetId(), userID)
+	project, err := t.uc.GetProject(ctx, req.GetProjectId(), userID, req.GetLimit(), req.GetOffset())
 	if err != nil {
 		t.log.Error("cannot get project tree", "op", op, "error", err)
+	
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	var grpcGroups []*taskv1.Group
 
-	for _, group := range projectTree.Groups {
-		var grpcTasks []*taskv1.Task
-
-		for _, task := range group.Tasks {
-			grpcTask := &taskv1.Task{
-				TaskId:    task.ID,
-				Name:      task.Name,
-				GroupId:   task.GroupID,
-				UserId:    userID.String(),
-				CreatedAt: timestamppb.New(task.CreatedAt),
-				UpdatedAt: timestamppb.New(task.UpdatedAt),
-			}
-
-			if task.Description != nil {
-				grpcTask.Description = task.Description
-			}
-			if task.Status != nil {
-				grpcTask.Status = task.Status
-			}
-			if task.Priority != nil {
-				priority := int32(*task.Priority)
-				grpcTask.Priority = &priority
-			}
-			if task.StartTime != nil {
-				grpcTask.StartTime = timestamppb.New(*task.StartTime)
-			}
-			if task.Deadline != nil {
-				grpcTask.Deadline = timestamppb.New(*task.Deadline)
-			}
-
-			for _, tag := range task.Tags {
-				grpcTag := &taskv1.Tag{
-					Tag:    tag.ID,
-					Name:   tag.Name,
-					Color:  tag.Color,
-					UserId: userID.String(),
-				}
-				grpcTask.Tags = append(grpcTask.Tags, grpcTag)
-			}
-
-			grpcTasks = append(grpcTasks, grpcTask)
-		}
-
-		grpcGroup := &taskv1.Group{
-			Id:        group.ID,
-			Name:      group.Name,
-			ProjectId: group.ProjectID,
-			TaskCount: int32(group.TaskCount),
-			Tasks:     grpcTasks,
-		}
-
-		grpcGroups = append(grpcGroups, grpcGroup)
+	for _, group := range project.Groups {
+		grpcGroups = append(grpcGroups, mapGroup(group))
 	}
 
 	grpcProject := &taskv1.Project{
-		Id:        projectTree.ID,
-		Name:      projectTree.Name,
+		Id:        project.ID,
+		Name:      project.Name,
 		UserId:    userID.String(),
-		TaskCount: int32(projectTree.TaskCount),
+		TaskCount: int64(project.TaskCount),
 		Groups:    grpcGroups,
 	}
 
-	if projectTree.Description != nil {
-		grpcProject.Description = *projectTree.Description
+	if project.Description != nil {
+		grpcProject.Description = *project.Description
 	}
 
-	return &taskv1.GetProjectTreeResponse{
+	return &taskv1.GetProjectResponse{
 		Project: grpcProject,
 	}, nil
 }
@@ -183,12 +140,14 @@ func (t *TaskHandler) GetProjects(ctx context.Context, req *taskv1.GetProjectsRe
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("cannot extract userID from ctx", "op", op, "error", err)
+	
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	projects, err := t.uc.GetProjects(ctx, userID, req.GetLimit(), req.GetOffset())
 	if err != nil {
 		t.log.Error("cannot get projects", "op", op, "error", err)
+	
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
