@@ -1,9 +1,9 @@
 package usecase_test
 
 import (
-	"bernard/internal/config"
 	"bernard/internal/domain/entity"
 	"bernard/internal/usecase"
+	"bernard/utils"
 	"context"
 	"log/slog"
 	"os"
@@ -11,12 +11,12 @@ import (
 
 	mocks "bernard/internal/usecase/mocks"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUseCase_CreateGroup(t *testing.T) {
 	type fields struct {
-		config *config.Config
 		log    *slog.Logger
 		db     *mocks.MockStorage
 	}
@@ -39,14 +39,14 @@ func TestUseCase_CreateGroup(t *testing.T) {
 				ctx: context.Background(),
 				group: entity.Group{
 					Name:      "test_group",
-					Tasks:     []entity.Task{},
+					Tasks:     []*entity.Task{},
 					TaskCount: 0,
 					ProjectID: 1,
 				},
 			},
 			want: &entity.Group{
 				Name:      "test_group",
-				Tasks:     []entity.Task{},
+				Tasks:     []*entity.Task{},
 				TaskCount: 0,
 				ProjectID: 1,
 			},
@@ -56,14 +56,12 @@ func TestUseCase_CreateGroup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("CreateGroup", tt.args.ctx, tt.args.group).Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
@@ -86,14 +84,15 @@ func TestUseCase_CreateGroup(t *testing.T) {
 
 func TestUseCase_UpdateGroup(t *testing.T) {
 	type fields struct {
-		config *config.Config
 		log    *slog.Logger
 		db     *mocks.MockStorage
 	}
 
 	type args struct {
-		ctx   context.Context
-		group entity.Group
+		ctx     context.Context
+		group   entity.UpdateGroupRequest
+		userID  uuid.UUID
+		groupID int64
 	}
 
 	tests := []struct {
@@ -107,17 +106,15 @@ func TestUseCase_UpdateGroup(t *testing.T) {
 			name: "success",
 			args: args{
 				ctx: context.Background(),
-				group: entity.Group{
-					Name:      "test_group",
-					Tasks:     []entity.Task{},
-					TaskCount: 0,
-					ProjectID: 1,
+				group: entity.UpdateGroupRequest{
+					Name:      utils.Ptr("test"),
+					ProjectID: utils.Ptr(int64(1)),
 				},
+				userID:  uuid.New(),
+				groupID: 1,
 			},
 			want: &entity.Group{
-				Name:      "test_group",
-				Tasks:     []entity.Task{},
-				TaskCount: 0,
+				Name:      "test",
 				ProjectID: 1,
 			},
 			wantErr: false,
@@ -126,19 +123,17 @@ func TestUseCase_UpdateGroup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
 			mockStorage.On("UpdateGroup", tt.args.ctx, tt.args.group).Return(tt.want, nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
 
-			got, err := u.UpdateGroup(tt.args.ctx, tt.args.group)
+			got, err := u.UpdateGroup(tt.args.ctx, tt.args.group, tt.args.userID, tt.args.groupID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateGroup() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -156,7 +151,6 @@ func TestUseCase_UpdateGroup(t *testing.T) {
 
 func TestUseCase_DeleteGroup(t *testing.T) {
 	type fields struct {
-		config *config.Config
 		log    *slog.Logger
 		db     *mocks.MockStorage
 	}
@@ -164,13 +158,13 @@ func TestUseCase_DeleteGroup(t *testing.T) {
 	type args struct {
 		ctx     context.Context
 		groupID int64
+		userID  uuid.UUID
 	}
 
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    *entity.Group
 		wantErr bool
 	}{
 		{
@@ -178,12 +172,7 @@ func TestUseCase_DeleteGroup(t *testing.T) {
 			args: args{
 				ctx:     context.Background(),
 				groupID: 1,
-			},
-			want: &entity.Group{
-				Name:      "test_group",
-				Tasks:     []entity.Task{},
-				TaskCount: 0,
-				ProjectID: 1,
+				userID:  uuid.New(),
 			},
 			wantErr: false,
 		},
@@ -192,33 +181,27 @@ func TestUseCase_DeleteGroup(t *testing.T) {
 			args: args{
 				ctx:     context.Background(),
 				groupID: 0,
+				userID:  uuid.New(),
 			},
-			want:    nil,
 			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{}
 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			mockStorage := mocks.NewMockStorage(t)
 
-			mockStorage.On("DeleteGroup", tt.args.ctx, tt.args.groupID).Maybe().Return(tt.want, nil)
+			mockStorage.On("DeleteGroup", tt.args.ctx, tt.args.groupID).Maybe().Return(nil)
 
 			u := &usecase.UseCase{
-				Config: cfg,
 				Log:    log,
 				DB:     mockStorage,
 			}
 
-			got, err := u.DeleteGroup(tt.args.ctx, tt.args.groupID)
+			err := u.DeleteGroup(tt.args.ctx, tt.args.groupID, tt.args.userID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DeleteGroup() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if tt.want != nil {
-				require.Equal(t, tt.want, got)
 			}
 
 			if tt.wantErr {

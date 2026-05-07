@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -13,6 +14,13 @@ type Config struct {
 	Env        string         `yaml:"env" env-default:"local"`
 	HTTPServer HTTPServer     `yaml:"http_server"`
 	Postgres   PostgresConfig `yaml:"postgres"`
+	Redis      RedisConfig    `yaml:"redis"`
+}
+
+type RedisConfig struct {
+	Addr string `yaml:"addr"`
+	Password string `yaml:"password"`
+	DB int `yaml:"db"`
 }
 
 type PostgresConfig struct {
@@ -46,5 +54,11 @@ func MustLoadConfig() *Config {
 
 	cfg.Postgres.Addr = os.Getenv("POSTGRES_URL")
 
+	cfg.Redis.Password = os.Getenv("REDIS_PASSWORD")
+	cfg.Redis.DB, err = strconv.Atoi(os.Getenv("REDIS_DB"))
+	if err != nil {
+		log.Fatal("Redis config db value error")
+	}
+	
 	return &cfg
 }

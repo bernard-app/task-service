@@ -4,8 +4,16 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type dbEngine interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
 
 type Storage struct {
 	DB *pgxpool.Pool
@@ -29,5 +37,15 @@ func NewStorage(ctx context.Context, storagePath string) (*Storage, error) {
 
 func (s *Storage) Close() error {
 	s.DB.Close()
+	
 	return nil
+}
+
+func (s *Storage) getEngine(ctx context.Context) dbEngine {
+	tx := extractTx(ctx)
+	if tx != nil {
+		return tx
+	}
+
+	return s.DB
 }

@@ -1,12 +1,28 @@
-package httpLogger
+package grpc
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
+	"google.golang.org/grpc"
 )
+
+func LoggingInterceptor(ctx context.Context, log *slog.Logger, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	start := time.Now()
+
+	log = log.With(slog.String("component", "middleware/logger"))
+	
+	log.Info("Method logging started", "info", info.FullMethod)
+
+	resp, err := handler(ctx, req)
+
+	log.Info("Method ended", "info", info.FullMethod, "time", time.Since(start), "error", err)
+
+	return resp, err
+}
 
 func New(log *slog.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

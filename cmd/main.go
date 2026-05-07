@@ -8,8 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	_ "bernard/docs"
 )
 
 func main() {

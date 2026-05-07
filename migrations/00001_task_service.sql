@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS tasks(
     status TEXT,
     start_time TIMESTAMPTZ NOT NULL,
     deadline TIMESTAMPTZ,
-    group_id INT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    group_id BIGINT REFERENCES groups(id) ON DELETE CASCADE,
+    project_id BIGINT REFERENCES projects(id) ON DELETE CASCADE,
     user_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -37,7 +38,8 @@ CREATE TABLE IF NOT EXISTS tags (
     name TEXT NOT NULL,
     color VARCHAR(7) NOT NULL,
     is_system BOOLEAN DEFAULT false,
-    user_id UUID NOT NULL
+    user_id UUID NOT NULL,
+    project_id BIGINT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS tasks_tags (

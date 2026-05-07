@@ -37,7 +37,8 @@ func (t *TaskHandler) CreateTask(ctx context.Context, req *taskv1.CreateTaskRequ
 		Status:      req.Status,
 		StartTime:   &startTime,
 		Deadline:    &deadline,
-		GroupID:     req.GetGroupId(),
+		GroupID:     req.GroupId,
+		ProjectID: req.ProjectId,
 		UserID:      userID,
 	}
 
@@ -138,7 +139,7 @@ func (t *TaskHandler) GetTask(ctx context.Context, req *taskv1.GetTaskRequest) (
 	}, nil
 }
 
-func (t *TaskHandler) GetListTask(ctx context.Context, req *taskv1.GetListTasksRequest) (*taskv1.GetListTasksResponse, error) {
+func (t *TaskHandler) GetListTask(ctx context.Context, req *taskv1.GetListTaskRequest) (*taskv1.GetListTaskResponse, error) {
 	const op = "grpc.GetListTask"
 
 	userID, err := extractUserID(ctx)
@@ -160,19 +161,39 @@ func (t *TaskHandler) GetListTask(ctx context.Context, req *taskv1.GetListTasksR
 		return nil, status.Errorf(codes.Internal, "failed to get tasks: %v", err)
 	}
 
-	tasksResponse := make([]*taskv1.TasksTab, 0, len(tasks))
+	tasksResponse := make([]*taskv1.Task, 0, len(tasks))
 	for _, userTask := range tasks {
-		taskTab := taskv1.TasksTab{
-			Task:        mapTask(&userTask.Task),
-			GroupName:   userTask.GroupName,
-			ProjectId:   userTask.ProjectID,
-			ProjectName: userTask.ProjectName,
-		}
-		tasksResponse = append(tasksResponse, &taskTab)
+		tasksResponse = append(tasksResponse, mapTask(userTask))
 	}
 
-	return &taskv1.GetListTasksResponse{
+	return &taskv1.GetListTaskResponse{
 		Tasks: tasksResponse,
+	}, nil
+}
+
+func (t *TaskHandler) GetGroupTasks(ctx context.Context, req *taskv1.GetGroupTasksRequest) (*taskv1.GetGroupTasksResponse, error) {
+	const op = "grpc.GetGroupTasks"
+
+	userID, err := extractUserID(ctx)
+	if err != nil {
+		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	tasks, err := t.uc.GetGroupTasks(ctx, req.GetGroupId(), userID, req.GetLimit(), req.GetOffset())
+	if err != nil {
+		t.log.Error("Failed to get group tasks", "op", op, "error", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	var grpcTasks []*taskv1.Task
+
+	for _, task := range tasks {
+		grpcTasks = append(grpcTasks, mapTask(task))
+	}
+
+	return &taskv1.GetGroupTasksResponse{
+		Tasks: grpcTasks,
 	}, nil
 }
 

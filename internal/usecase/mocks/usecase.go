@@ -40,6 +40,69 @@ func (_m *MockStorage) EXPECT() *MockStorage_Expecter {
 	return &MockStorage_Expecter{mock: &_m.Mock}
 }
 
+// AddTagsToTask provides a mock function for the type MockStorage
+func (_mock *MockStorage) AddTagsToTask(ctx context.Context, tagsIDs []int64, taskID int64) error {
+	ret := _mock.Called(ctx, tagsIDs, taskID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddTagsToTask")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []int64, int64) error); ok {
+		r0 = returnFunc(ctx, tagsIDs, taskID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockStorage_AddTagsToTask_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddTagsToTask'
+type MockStorage_AddTagsToTask_Call struct {
+	*mock.Call
+}
+
+// AddTagsToTask is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tagsIDs []int64
+//   - taskID int64
+func (_e *MockStorage_Expecter) AddTagsToTask(ctx interface{}, tagsIDs interface{}, taskID interface{}) *MockStorage_AddTagsToTask_Call {
+	return &MockStorage_AddTagsToTask_Call{Call: _e.mock.On("AddTagsToTask", ctx, tagsIDs, taskID)}
+}
+
+func (_c *MockStorage_AddTagsToTask_Call) Run(run func(ctx context.Context, tagsIDs []int64, taskID int64)) *MockStorage_AddTagsToTask_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []int64
+		if args[1] != nil {
+			arg1 = args[1].([]int64)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_AddTagsToTask_Call) Return(err error) *MockStorage_AddTagsToTask_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockStorage_AddTagsToTask_Call) RunAndReturn(run func(ctx context.Context, tagsIDs []int64, taskID int64) error) *MockStorage_AddTagsToTask_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ArchiveOldTasks provides a mock function for the type MockStorage
 func (_mock *MockStorage) ArchiveOldTasks(ctx context.Context) (int64, error) {
 	ret := _mock.Called(ctx)
@@ -310,6 +373,74 @@ func (_c *MockStorage_CreateProject_Call) RunAndReturn(run func(ctx context.Cont
 	return _c
 }
 
+// CreateTag provides a mock function for the type MockStorage
+func (_mock *MockStorage) CreateTag(ctx context.Context, tag entity.Tag) (*entity.Tag, error) {
+	ret := _mock.Called(ctx, tag)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateTag")
+	}
+
+	var r0 *entity.Tag
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.Tag) (*entity.Tag, error)); ok {
+		return returnFunc(ctx, tag)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.Tag) *entity.Tag); ok {
+		r0 = returnFunc(ctx, tag)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*entity.Tag)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, entity.Tag) error); ok {
+		r1 = returnFunc(ctx, tag)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_CreateTag_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateTag'
+type MockStorage_CreateTag_Call struct {
+	*mock.Call
+}
+
+// CreateTag is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tag entity.Tag
+func (_e *MockStorage_Expecter) CreateTag(ctx interface{}, tag interface{}) *MockStorage_CreateTag_Call {
+	return &MockStorage_CreateTag_Call{Call: _e.mock.On("CreateTag", ctx, tag)}
+}
+
+func (_c *MockStorage_CreateTag_Call) Run(run func(ctx context.Context, tag entity.Tag)) *MockStorage_CreateTag_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 entity.Tag
+		if args[1] != nil {
+			arg1 = args[1].(entity.Tag)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_CreateTag_Call) Return(tag1 *entity.Tag, err error) *MockStorage_CreateTag_Call {
+	_c.Call.Return(tag1, err)
+	return _c
+}
+
+func (_c *MockStorage_CreateTag_Call) RunAndReturn(run func(ctx context.Context, tag entity.Tag) (*entity.Tag, error)) *MockStorage_CreateTag_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateTask provides a mock function for the type MockStorage
 func (_mock *MockStorage) CreateTask(ctx context.Context, task entity.Task) (*entity.Task, error) {
 	ret := _mock.Called(ctx, task)
@@ -379,31 +510,20 @@ func (_c *MockStorage_CreateTask_Call) RunAndReturn(run func(ctx context.Context
 }
 
 // DeleteGroup provides a mock function for the type MockStorage
-func (_mock *MockStorage) DeleteGroup(ctx context.Context, groupID int64) (*entity.Group, error) {
-	ret := _mock.Called(ctx, groupID)
+func (_mock *MockStorage) DeleteGroup(ctx context.Context, groupID int64, userID uuid.UUID) error {
+	ret := _mock.Called(ctx, groupID, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteGroup")
 	}
 
-	var r0 *entity.Group
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (*entity.Group, error)); ok {
-		return returnFunc(ctx, groupID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) *entity.Group); ok {
-		r0 = returnFunc(ctx, groupID)
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, uuid.UUID) error); ok {
+		r0 = returnFunc(ctx, groupID, userID)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*entity.Group)
-		}
+		r0 = ret.Error(0)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = returnFunc(ctx, groupID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockStorage_DeleteGroup_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteGroup'
@@ -414,11 +534,12 @@ type MockStorage_DeleteGroup_Call struct {
 // DeleteGroup is a helper method to define mock.On call
 //   - ctx context.Context
 //   - groupID int64
-func (_e *MockStorage_Expecter) DeleteGroup(ctx interface{}, groupID interface{}) *MockStorage_DeleteGroup_Call {
-	return &MockStorage_DeleteGroup_Call{Call: _e.mock.On("DeleteGroup", ctx, groupID)}
+//   - userID uuid.UUID
+func (_e *MockStorage_Expecter) DeleteGroup(ctx interface{}, groupID interface{}, userID interface{}) *MockStorage_DeleteGroup_Call {
+	return &MockStorage_DeleteGroup_Call{Call: _e.mock.On("DeleteGroup", ctx, groupID, userID)}
 }
 
-func (_c *MockStorage_DeleteGroup_Call) Run(run func(ctx context.Context, groupID int64)) *MockStorage_DeleteGroup_Call {
+func (_c *MockStorage_DeleteGroup_Call) Run(run func(ctx context.Context, groupID int64, userID uuid.UUID)) *MockStorage_DeleteGroup_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -428,50 +549,44 @@ func (_c *MockStorage_DeleteGroup_Call) Run(run func(ctx context.Context, groupI
 		if args[1] != nil {
 			arg1 = args[1].(int64)
 		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
 }
 
-func (_c *MockStorage_DeleteGroup_Call) Return(group *entity.Group, err error) *MockStorage_DeleteGroup_Call {
-	_c.Call.Return(group, err)
+func (_c *MockStorage_DeleteGroup_Call) Return(err error) *MockStorage_DeleteGroup_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockStorage_DeleteGroup_Call) RunAndReturn(run func(ctx context.Context, groupID int64) (*entity.Group, error)) *MockStorage_DeleteGroup_Call {
+func (_c *MockStorage_DeleteGroup_Call) RunAndReturn(run func(ctx context.Context, groupID int64, userID uuid.UUID) error) *MockStorage_DeleteGroup_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // DeleteProject provides a mock function for the type MockStorage
-func (_mock *MockStorage) DeleteProject(ctx context.Context, projectID int64) (*entity.Project, error) {
-	ret := _mock.Called(ctx, projectID)
+func (_mock *MockStorage) DeleteProject(ctx context.Context, projectID int64, userID uuid.UUID) error {
+	ret := _mock.Called(ctx, projectID, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteProject")
 	}
 
-	var r0 *entity.Project
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (*entity.Project, error)); ok {
-		return returnFunc(ctx, projectID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) *entity.Project); ok {
-		r0 = returnFunc(ctx, projectID)
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, uuid.UUID) error); ok {
+		r0 = returnFunc(ctx, projectID, userID)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*entity.Project)
-		}
+		r0 = ret.Error(0)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = returnFunc(ctx, projectID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockStorage_DeleteProject_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteProject'
@@ -482,11 +597,12 @@ type MockStorage_DeleteProject_Call struct {
 // DeleteProject is a helper method to define mock.On call
 //   - ctx context.Context
 //   - projectID int64
-func (_e *MockStorage_Expecter) DeleteProject(ctx interface{}, projectID interface{}) *MockStorage_DeleteProject_Call {
-	return &MockStorage_DeleteProject_Call{Call: _e.mock.On("DeleteProject", ctx, projectID)}
+//   - userID uuid.UUID
+func (_e *MockStorage_Expecter) DeleteProject(ctx interface{}, projectID interface{}, userID interface{}) *MockStorage_DeleteProject_Call {
+	return &MockStorage_DeleteProject_Call{Call: _e.mock.On("DeleteProject", ctx, projectID, userID)}
 }
 
-func (_c *MockStorage_DeleteProject_Call) Run(run func(ctx context.Context, projectID int64)) *MockStorage_DeleteProject_Call {
+func (_c *MockStorage_DeleteProject_Call) Run(run func(ctx context.Context, projectID int64, userID uuid.UUID)) *MockStorage_DeleteProject_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -496,50 +612,107 @@ func (_c *MockStorage_DeleteProject_Call) Run(run func(ctx context.Context, proj
 		if args[1] != nil {
 			arg1 = args[1].(int64)
 		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
 }
 
-func (_c *MockStorage_DeleteProject_Call) Return(project *entity.Project, err error) *MockStorage_DeleteProject_Call {
-	_c.Call.Return(project, err)
+func (_c *MockStorage_DeleteProject_Call) Return(err error) *MockStorage_DeleteProject_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockStorage_DeleteProject_Call) RunAndReturn(run func(ctx context.Context, projectID int64) (*entity.Project, error)) *MockStorage_DeleteProject_Call {
+func (_c *MockStorage_DeleteProject_Call) RunAndReturn(run func(ctx context.Context, projectID int64, userID uuid.UUID) error) *MockStorage_DeleteProject_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeleteTag provides a mock function for the type MockStorage
+func (_mock *MockStorage) DeleteTag(ctx context.Context, tagID int64, userID uuid.UUID) error {
+	ret := _mock.Called(ctx, tagID, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteTag")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, uuid.UUID) error); ok {
+		r0 = returnFunc(ctx, tagID, userID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockStorage_DeleteTag_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteTag'
+type MockStorage_DeleteTag_Call struct {
+	*mock.Call
+}
+
+// DeleteTag is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tagID int64
+//   - userID uuid.UUID
+func (_e *MockStorage_Expecter) DeleteTag(ctx interface{}, tagID interface{}, userID interface{}) *MockStorage_DeleteTag_Call {
+	return &MockStorage_DeleteTag_Call{Call: _e.mock.On("DeleteTag", ctx, tagID, userID)}
+}
+
+func (_c *MockStorage_DeleteTag_Call) Run(run func(ctx context.Context, tagID int64, userID uuid.UUID)) *MockStorage_DeleteTag_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_DeleteTag_Call) Return(err error) *MockStorage_DeleteTag_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockStorage_DeleteTag_Call) RunAndReturn(run func(ctx context.Context, tagID int64, userID uuid.UUID) error) *MockStorage_DeleteTag_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // DeleteTask provides a mock function for the type MockStorage
-func (_mock *MockStorage) DeleteTask(ctx context.Context, userID uuid.UUID, id int64) (*entity.Task, error) {
+func (_mock *MockStorage) DeleteTask(ctx context.Context, userID uuid.UUID, id int64) error {
 	ret := _mock.Called(ctx, userID, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteTask")
 	}
 
-	var r0 *entity.Task
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) (*entity.Task, error)); ok {
-		return returnFunc(ctx, userID, id)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) *entity.Task); ok {
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) error); ok {
 		r0 = returnFunc(ctx, userID, id)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*entity.Task)
-		}
+		r0 = ret.Error(0)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int64) error); ok {
-		r1 = returnFunc(ctx, userID, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockStorage_DeleteTask_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteTask'
@@ -578,22 +751,182 @@ func (_c *MockStorage_DeleteTask_Call) Run(run func(ctx context.Context, userID 
 	return _c
 }
 
-func (_c *MockStorage_DeleteTask_Call) Return(task *entity.Task, err error) *MockStorage_DeleteTask_Call {
-	_c.Call.Return(task, err)
+func (_c *MockStorage_DeleteTask_Call) Return(err error) *MockStorage_DeleteTask_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockStorage_DeleteTask_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, id int64) (*entity.Task, error)) *MockStorage_DeleteTask_Call {
+func (_c *MockStorage_DeleteTask_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, id int64) error) *MockStorage_DeleteTask_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetProjectTree provides a mock function for the type MockStorage
-func (_mock *MockStorage) GetProjectTree(ctx context.Context, projectID int64, userID uuid.UUID) (*entity.Project, error) {
+// GetGroup provides a mock function for the type MockStorage
+func (_mock *MockStorage) GetGroup(ctx context.Context, userID uuid.UUID, groupID int64) (*entity.Group, error) {
+	ret := _mock.Called(ctx, userID, groupID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetGroup")
+	}
+
+	var r0 *entity.Group
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) (*entity.Group, error)); ok {
+		return returnFunc(ctx, userID, groupID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) *entity.Group); ok {
+		r0 = returnFunc(ctx, userID, groupID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*entity.Group)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int64) error); ok {
+		r1 = returnFunc(ctx, userID, groupID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_GetGroup_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetGroup'
+type MockStorage_GetGroup_Call struct {
+	*mock.Call
+}
+
+// GetGroup is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - groupID int64
+func (_e *MockStorage_Expecter) GetGroup(ctx interface{}, userID interface{}, groupID interface{}) *MockStorage_GetGroup_Call {
+	return &MockStorage_GetGroup_Call{Call: _e.mock.On("GetGroup", ctx, userID, groupID)}
+}
+
+func (_c *MockStorage_GetGroup_Call) Run(run func(ctx context.Context, userID uuid.UUID, groupID int64)) *MockStorage_GetGroup_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_GetGroup_Call) Return(group *entity.Group, err error) *MockStorage_GetGroup_Call {
+	_c.Call.Return(group, err)
+	return _c
+}
+
+func (_c *MockStorage_GetGroup_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, groupID int64) (*entity.Group, error)) *MockStorage_GetGroup_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetGroupTasks provides a mock function for the type MockStorage
+func (_mock *MockStorage) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.UUID, limit uint64, offset uint64) ([]*entity.Task, error) {
+	ret := _mock.Called(ctx, groupID, userID, limit, offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetGroupTasks")
+	}
+
+	var r0 []*entity.Task
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, uuid.UUID, uint64, uint64) ([]*entity.Task, error)); ok {
+		return returnFunc(ctx, groupID, userID, limit, offset)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, uuid.UUID, uint64, uint64) []*entity.Task); ok {
+		r0 = returnFunc(ctx, groupID, userID, limit, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*entity.Task)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, uuid.UUID, uint64, uint64) error); ok {
+		r1 = returnFunc(ctx, groupID, userID, limit, offset)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_GetGroupTasks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetGroupTasks'
+type MockStorage_GetGroupTasks_Call struct {
+	*mock.Call
+}
+
+// GetGroupTasks is a helper method to define mock.On call
+//   - ctx context.Context
+//   - groupID int64
+//   - userID uuid.UUID
+//   - limit uint64
+//   - offset uint64
+func (_e *MockStorage_Expecter) GetGroupTasks(ctx interface{}, groupID interface{}, userID interface{}, limit interface{}, offset interface{}) *MockStorage_GetGroupTasks_Call {
+	return &MockStorage_GetGroupTasks_Call{Call: _e.mock.On("GetGroupTasks", ctx, groupID, userID, limit, offset)}
+}
+
+func (_c *MockStorage_GetGroupTasks_Call) Run(run func(ctx context.Context, groupID int64, userID uuid.UUID, limit uint64, offset uint64)) *MockStorage_GetGroupTasks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		var arg3 uint64
+		if args[3] != nil {
+			arg3 = args[3].(uint64)
+		}
+		var arg4 uint64
+		if args[4] != nil {
+			arg4 = args[4].(uint64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_GetGroupTasks_Call) Return(tasks []*entity.Task, err error) *MockStorage_GetGroupTasks_Call {
+	_c.Call.Return(tasks, err)
+	return _c
+}
+
+func (_c *MockStorage_GetGroupTasks_Call) RunAndReturn(run func(ctx context.Context, groupID int64, userID uuid.UUID, limit uint64, offset uint64) ([]*entity.Task, error)) *MockStorage_GetGroupTasks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetProject provides a mock function for the type MockStorage
+func (_mock *MockStorage) GetProject(ctx context.Context, projectID int64, userID uuid.UUID) (*entity.Project, error) {
 	ret := _mock.Called(ctx, projectID, userID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetProjectTree")
+		panic("no return value specified for GetProject")
 	}
 
 	var r0 *entity.Project
@@ -616,20 +949,20 @@ func (_mock *MockStorage) GetProjectTree(ctx context.Context, projectID int64, u
 	return r0, r1
 }
 
-// MockStorage_GetProjectTree_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetProjectTree'
-type MockStorage_GetProjectTree_Call struct {
+// MockStorage_GetProject_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetProject'
+type MockStorage_GetProject_Call struct {
 	*mock.Call
 }
 
-// GetProjectTree is a helper method to define mock.On call
+// GetProject is a helper method to define mock.On call
 //   - ctx context.Context
 //   - projectID int64
 //   - userID uuid.UUID
-func (_e *MockStorage_Expecter) GetProjectTree(ctx interface{}, projectID interface{}, userID interface{}) *MockStorage_GetProjectTree_Call {
-	return &MockStorage_GetProjectTree_Call{Call: _e.mock.On("GetProjectTree", ctx, projectID, userID)}
+func (_e *MockStorage_Expecter) GetProject(ctx interface{}, projectID interface{}, userID interface{}) *MockStorage_GetProject_Call {
+	return &MockStorage_GetProject_Call{Call: _e.mock.On("GetProject", ctx, projectID, userID)}
 }
 
-func (_c *MockStorage_GetProjectTree_Call) Run(run func(ctx context.Context, projectID int64, userID uuid.UUID)) *MockStorage_GetProjectTree_Call {
+func (_c *MockStorage_GetProject_Call) Run(run func(ctx context.Context, projectID int64, userID uuid.UUID)) *MockStorage_GetProject_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -652,12 +985,98 @@ func (_c *MockStorage_GetProjectTree_Call) Run(run func(ctx context.Context, pro
 	return _c
 }
 
-func (_c *MockStorage_GetProjectTree_Call) Return(project *entity.Project, err error) *MockStorage_GetProjectTree_Call {
+func (_c *MockStorage_GetProject_Call) Return(project *entity.Project, err error) *MockStorage_GetProject_Call {
 	_c.Call.Return(project, err)
 	return _c
 }
 
-func (_c *MockStorage_GetProjectTree_Call) RunAndReturn(run func(ctx context.Context, projectID int64, userID uuid.UUID) (*entity.Project, error)) *MockStorage_GetProjectTree_Call {
+func (_c *MockStorage_GetProject_Call) RunAndReturn(run func(ctx context.Context, projectID int64, userID uuid.UUID) (*entity.Project, error)) *MockStorage_GetProject_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetProjectGroups provides a mock function for the type MockStorage
+func (_mock *MockStorage) GetProjectGroups(ctx context.Context, userID uuid.UUID, projectID int64, limit uint64, offset uint64) ([]*entity.Group, error) {
+	ret := _mock.Called(ctx, userID, projectID, limit, offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetProjectGroups")
+	}
+
+	var r0 []*entity.Group
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64, uint64, uint64) ([]*entity.Group, error)); ok {
+		return returnFunc(ctx, userID, projectID, limit, offset)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64, uint64, uint64) []*entity.Group); ok {
+		r0 = returnFunc(ctx, userID, projectID, limit, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*entity.Group)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int64, uint64, uint64) error); ok {
+		r1 = returnFunc(ctx, userID, projectID, limit, offset)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_GetProjectGroups_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetProjectGroups'
+type MockStorage_GetProjectGroups_Call struct {
+	*mock.Call
+}
+
+// GetProjectGroups is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - projectID int64
+//   - limit uint64
+//   - offset uint64
+func (_e *MockStorage_Expecter) GetProjectGroups(ctx interface{}, userID interface{}, projectID interface{}, limit interface{}, offset interface{}) *MockStorage_GetProjectGroups_Call {
+	return &MockStorage_GetProjectGroups_Call{Call: _e.mock.On("GetProjectGroups", ctx, userID, projectID, limit, offset)}
+}
+
+func (_c *MockStorage_GetProjectGroups_Call) Run(run func(ctx context.Context, userID uuid.UUID, projectID int64, limit uint64, offset uint64)) *MockStorage_GetProjectGroups_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 uint64
+		if args[3] != nil {
+			arg3 = args[3].(uint64)
+		}
+		var arg4 uint64
+		if args[4] != nil {
+			arg4 = args[4].(uint64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_GetProjectGroups_Call) Return(groups []*entity.Group, err error) *MockStorage_GetProjectGroups_Call {
+	_c.Call.Return(groups, err)
+	return _c
+}
+
+func (_c *MockStorage_GetProjectGroups_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, projectID int64, limit uint64, offset uint64) ([]*entity.Group, error)) *MockStorage_GetProjectGroups_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -742,9 +1161,163 @@ func (_c *MockStorage_GetProjects_Call) RunAndReturn(run func(ctx context.Contex
 	return _c
 }
 
+// GetTag provides a mock function for the type MockStorage
+func (_mock *MockStorage) GetTag(ctx context.Context, tagID int64, userID uuid.UUID) (*entity.Tag, error) {
+	ret := _mock.Called(ctx, tagID, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTag")
+	}
+
+	var r0 *entity.Tag
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, uuid.UUID) (*entity.Tag, error)); ok {
+		return returnFunc(ctx, tagID, userID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, uuid.UUID) *entity.Tag); ok {
+		r0 = returnFunc(ctx, tagID, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*entity.Tag)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, tagID, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_GetTag_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTag'
+type MockStorage_GetTag_Call struct {
+	*mock.Call
+}
+
+// GetTag is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tagID int64
+//   - userID uuid.UUID
+func (_e *MockStorage_Expecter) GetTag(ctx interface{}, tagID interface{}, userID interface{}) *MockStorage_GetTag_Call {
+	return &MockStorage_GetTag_Call{Call: _e.mock.On("GetTag", ctx, tagID, userID)}
+}
+
+func (_c *MockStorage_GetTag_Call) Run(run func(ctx context.Context, tagID int64, userID uuid.UUID)) *MockStorage_GetTag_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_GetTag_Call) Return(tag *entity.Tag, err error) *MockStorage_GetTag_Call {
+	_c.Call.Return(tag, err)
+	return _c
+}
+
+func (_c *MockStorage_GetTag_Call) RunAndReturn(run func(ctx context.Context, tagID int64, userID uuid.UUID) (*entity.Tag, error)) *MockStorage_GetTag_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTagList provides a mock function for the type MockStorage
+func (_mock *MockStorage) GetTagList(ctx context.Context, userID uuid.UUID, limit uint64, offset uint64) ([]*entity.Tag, error) {
+	ret := _mock.Called(ctx, userID, limit, offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTagList")
+	}
+
+	var r0 []*entity.Tag
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uint64, uint64) ([]*entity.Tag, error)); ok {
+		return returnFunc(ctx, userID, limit, offset)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uint64, uint64) []*entity.Tag); ok {
+		r0 = returnFunc(ctx, userID, limit, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*entity.Tag)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uint64, uint64) error); ok {
+		r1 = returnFunc(ctx, userID, limit, offset)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_GetTagList_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTagList'
+type MockStorage_GetTagList_Call struct {
+	*mock.Call
+}
+
+// GetTagList is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - limit uint64
+//   - offset uint64
+func (_e *MockStorage_Expecter) GetTagList(ctx interface{}, userID interface{}, limit interface{}, offset interface{}) *MockStorage_GetTagList_Call {
+	return &MockStorage_GetTagList_Call{Call: _e.mock.On("GetTagList", ctx, userID, limit, offset)}
+}
+
+func (_c *MockStorage_GetTagList_Call) Run(run func(ctx context.Context, userID uuid.UUID, limit uint64, offset uint64)) *MockStorage_GetTagList_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 uint64
+		if args[2] != nil {
+			arg2 = args[2].(uint64)
+		}
+		var arg3 uint64
+		if args[3] != nil {
+			arg3 = args[3].(uint64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_GetTagList_Call) Return(tags []*entity.Tag, err error) *MockStorage_GetTagList_Call {
+	_c.Call.Return(tags, err)
+	return _c
+}
+
+func (_c *MockStorage_GetTagList_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, limit uint64, offset uint64) ([]*entity.Tag, error)) *MockStorage_GetTagList_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTask provides a mock function for the type MockStorage
-func (_mock *MockStorage) GetTask(ctx context.Context, id int64) (*entity.Task, error) {
-	ret := _mock.Called(ctx, id)
+func (_mock *MockStorage) GetTask(ctx context.Context, id int64, userID uuid.UUID) (*entity.Task, error) {
+	ret := _mock.Called(ctx, id, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTask")
@@ -752,18 +1325,18 @@ func (_mock *MockStorage) GetTask(ctx context.Context, id int64) (*entity.Task, 
 
 	var r0 *entity.Task
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (*entity.Task, error)); ok {
-		return returnFunc(ctx, id)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, uuid.UUID) (*entity.Task, error)); ok {
+		return returnFunc(ctx, id, userID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) *entity.Task); ok {
-		r0 = returnFunc(ctx, id)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, uuid.UUID) *entity.Task); ok {
+		r0 = returnFunc(ctx, id, userID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*entity.Task)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = returnFunc(ctx, id)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, id, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -778,11 +1351,85 @@ type MockStorage_GetTask_Call struct {
 // GetTask is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id int64
-func (_e *MockStorage_Expecter) GetTask(ctx interface{}, id interface{}) *MockStorage_GetTask_Call {
-	return &MockStorage_GetTask_Call{Call: _e.mock.On("GetTask", ctx, id)}
+//   - userID uuid.UUID
+func (_e *MockStorage_Expecter) GetTask(ctx interface{}, id interface{}, userID interface{}) *MockStorage_GetTask_Call {
+	return &MockStorage_GetTask_Call{Call: _e.mock.On("GetTask", ctx, id, userID)}
 }
 
-func (_c *MockStorage_GetTask_Call) Run(run func(ctx context.Context, id int64)) *MockStorage_GetTask_Call {
+func (_c *MockStorage_GetTask_Call) Run(run func(ctx context.Context, id int64, userID uuid.UUID)) *MockStorage_GetTask_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_GetTask_Call) Return(task *entity.Task, err error) *MockStorage_GetTask_Call {
+	_c.Call.Return(task, err)
+	return _c
+}
+
+func (_c *MockStorage_GetTask_Call) RunAndReturn(run func(ctx context.Context, id int64, userID uuid.UUID) (*entity.Task, error)) *MockStorage_GetTask_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTaskTags provides a mock function for the type MockStorage
+func (_mock *MockStorage) GetTaskTags(ctx context.Context, taskID int64) ([]*entity.Tag, error) {
+	ret := _mock.Called(ctx, taskID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTaskTags")
+	}
+
+	var r0 []*entity.Tag
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]*entity.Tag, error)); ok {
+		return returnFunc(ctx, taskID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []*entity.Tag); ok {
+		r0 = returnFunc(ctx, taskID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*entity.Tag)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, taskID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_GetTaskTags_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTaskTags'
+type MockStorage_GetTaskTags_Call struct {
+	*mock.Call
+}
+
+// GetTaskTags is a helper method to define mock.On call
+//   - ctx context.Context
+//   - taskID int64
+func (_e *MockStorage_Expecter) GetTaskTags(ctx interface{}, taskID interface{}) *MockStorage_GetTaskTags_Call {
+	return &MockStorage_GetTaskTags_Call{Call: _e.mock.On("GetTaskTags", ctx, taskID)}
+}
+
+func (_c *MockStorage_GetTaskTags_Call) Run(run func(ctx context.Context, taskID int64)) *MockStorage_GetTaskTags_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -800,38 +1447,38 @@ func (_c *MockStorage_GetTask_Call) Run(run func(ctx context.Context, id int64))
 	return _c
 }
 
-func (_c *MockStorage_GetTask_Call) Return(task *entity.Task, err error) *MockStorage_GetTask_Call {
-	_c.Call.Return(task, err)
+func (_c *MockStorage_GetTaskTags_Call) Return(tags []*entity.Tag, err error) *MockStorage_GetTaskTags_Call {
+	_c.Call.Return(tags, err)
 	return _c
 }
 
-func (_c *MockStorage_GetTask_Call) RunAndReturn(run func(ctx context.Context, id int64) (*entity.Task, error)) *MockStorage_GetTask_Call {
+func (_c *MockStorage_GetTaskTags_Call) RunAndReturn(run func(ctx context.Context, taskID int64) ([]*entity.Tag, error)) *MockStorage_GetTaskTags_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetTasksByDate provides a mock function for the type MockStorage
-func (_mock *MockStorage) GetTasksByDate(ctx context.Context, userID uuid.UUID, from time.Time, to time.Time) ([]*entity.UserTasksTab, error) {
-	ret := _mock.Called(ctx, userID, from, to)
+func (_mock *MockStorage) GetTasksByDate(ctx context.Context, userID uuid.UUID, from time.Time, to time.Time, limit uint64, offset uint64) ([]*entity.Task, error) {
+	ret := _mock.Called(ctx, userID, from, to, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTasksByDate")
 	}
 
-	var r0 []*entity.UserTasksTab
+	var r0 []*entity.Task
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, time.Time, time.Time) ([]*entity.UserTasksTab, error)); ok {
-		return returnFunc(ctx, userID, from, to)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, time.Time, time.Time, uint64, uint64) ([]*entity.Task, error)); ok {
+		return returnFunc(ctx, userID, from, to, limit, offset)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, time.Time, time.Time) []*entity.UserTasksTab); ok {
-		r0 = returnFunc(ctx, userID, from, to)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, time.Time, time.Time, uint64, uint64) []*entity.Task); ok {
+		r0 = returnFunc(ctx, userID, from, to, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*entity.UserTasksTab)
+			r0 = ret.Get(0).([]*entity.Task)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, time.Time, time.Time) error); ok {
-		r1 = returnFunc(ctx, userID, from, to)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, time.Time, time.Time, uint64, uint64) error); ok {
+		r1 = returnFunc(ctx, userID, from, to, limit, offset)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -848,11 +1495,13 @@ type MockStorage_GetTasksByDate_Call struct {
 //   - userID uuid.UUID
 //   - from time.Time
 //   - to time.Time
-func (_e *MockStorage_Expecter) GetTasksByDate(ctx interface{}, userID interface{}, from interface{}, to interface{}) *MockStorage_GetTasksByDate_Call {
-	return &MockStorage_GetTasksByDate_Call{Call: _e.mock.On("GetTasksByDate", ctx, userID, from, to)}
+//   - limit uint64
+//   - offset uint64
+func (_e *MockStorage_Expecter) GetTasksByDate(ctx interface{}, userID interface{}, from interface{}, to interface{}, limit interface{}, offset interface{}) *MockStorage_GetTasksByDate_Call {
+	return &MockStorage_GetTasksByDate_Call{Call: _e.mock.On("GetTasksByDate", ctx, userID, from, to, limit, offset)}
 }
 
-func (_c *MockStorage_GetTasksByDate_Call) Run(run func(ctx context.Context, userID uuid.UUID, from time.Time, to time.Time)) *MockStorage_GetTasksByDate_Call {
+func (_c *MockStorage_GetTasksByDate_Call) Run(run func(ctx context.Context, userID uuid.UUID, from time.Time, to time.Time, limit uint64, offset uint64)) *MockStorage_GetTasksByDate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -870,48 +1519,58 @@ func (_c *MockStorage_GetTasksByDate_Call) Run(run func(ctx context.Context, use
 		if args[3] != nil {
 			arg3 = args[3].(time.Time)
 		}
+		var arg4 uint64
+		if args[4] != nil {
+			arg4 = args[4].(uint64)
+		}
+		var arg5 uint64
+		if args[5] != nil {
+			arg5 = args[5].(uint64)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
+			arg4,
+			arg5,
 		)
 	})
 	return _c
 }
 
-func (_c *MockStorage_GetTasksByDate_Call) Return(userTasksTabs []*entity.UserTasksTab, err error) *MockStorage_GetTasksByDate_Call {
-	_c.Call.Return(userTasksTabs, err)
+func (_c *MockStorage_GetTasksByDate_Call) Return(tasks []*entity.Task, err error) *MockStorage_GetTasksByDate_Call {
+	_c.Call.Return(tasks, err)
 	return _c
 }
 
-func (_c *MockStorage_GetTasksByDate_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, from time.Time, to time.Time) ([]*entity.UserTasksTab, error)) *MockStorage_GetTasksByDate_Call {
+func (_c *MockStorage_GetTasksByDate_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, from time.Time, to time.Time, limit uint64, offset uint64) ([]*entity.Task, error)) *MockStorage_GetTasksByDate_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetTasksByPriority provides a mock function for the type MockStorage
-func (_mock *MockStorage) GetTasksByPriority(ctx context.Context, userID uuid.UUID, priority int) ([]*entity.UserTasksTab, error) {
-	ret := _mock.Called(ctx, userID, priority)
+func (_mock *MockStorage) GetTasksByPriority(ctx context.Context, userID uuid.UUID, priority int, limit uint64, offset uint64) ([]*entity.Task, error) {
+	ret := _mock.Called(ctx, userID, priority, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTasksByPriority")
 	}
 
-	var r0 []*entity.UserTasksTab
+	var r0 []*entity.Task
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int) ([]*entity.UserTasksTab, error)); ok {
-		return returnFunc(ctx, userID, priority)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int, uint64, uint64) ([]*entity.Task, error)); ok {
+		return returnFunc(ctx, userID, priority, limit, offset)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int) []*entity.UserTasksTab); ok {
-		r0 = returnFunc(ctx, userID, priority)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int, uint64, uint64) []*entity.Task); ok {
+		r0 = returnFunc(ctx, userID, priority, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*entity.UserTasksTab)
+			r0 = ret.Get(0).([]*entity.Task)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int) error); ok {
-		r1 = returnFunc(ctx, userID, priority)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int, uint64, uint64) error); ok {
+		r1 = returnFunc(ctx, userID, priority, limit, offset)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -927,11 +1586,13 @@ type MockStorage_GetTasksByPriority_Call struct {
 //   - ctx context.Context
 //   - userID uuid.UUID
 //   - priority int
-func (_e *MockStorage_Expecter) GetTasksByPriority(ctx interface{}, userID interface{}, priority interface{}) *MockStorage_GetTasksByPriority_Call {
-	return &MockStorage_GetTasksByPriority_Call{Call: _e.mock.On("GetTasksByPriority", ctx, userID, priority)}
+//   - limit uint64
+//   - offset uint64
+func (_e *MockStorage_Expecter) GetTasksByPriority(ctx interface{}, userID interface{}, priority interface{}, limit interface{}, offset interface{}) *MockStorage_GetTasksByPriority_Call {
+	return &MockStorage_GetTasksByPriority_Call{Call: _e.mock.On("GetTasksByPriority", ctx, userID, priority, limit, offset)}
 }
 
-func (_c *MockStorage_GetTasksByPriority_Call) Run(run func(ctx context.Context, userID uuid.UUID, priority int)) *MockStorage_GetTasksByPriority_Call {
+func (_c *MockStorage_GetTasksByPriority_Call) Run(run func(ctx context.Context, userID uuid.UUID, priority int, limit uint64, offset uint64)) *MockStorage_GetTasksByPriority_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -945,47 +1606,57 @@ func (_c *MockStorage_GetTasksByPriority_Call) Run(run func(ctx context.Context,
 		if args[2] != nil {
 			arg2 = args[2].(int)
 		}
+		var arg3 uint64
+		if args[3] != nil {
+			arg3 = args[3].(uint64)
+		}
+		var arg4 uint64
+		if args[4] != nil {
+			arg4 = args[4].(uint64)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
+			arg3,
+			arg4,
 		)
 	})
 	return _c
 }
 
-func (_c *MockStorage_GetTasksByPriority_Call) Return(userTasksTabs []*entity.UserTasksTab, err error) *MockStorage_GetTasksByPriority_Call {
-	_c.Call.Return(userTasksTabs, err)
+func (_c *MockStorage_GetTasksByPriority_Call) Return(tasks []*entity.Task, err error) *MockStorage_GetTasksByPriority_Call {
+	_c.Call.Return(tasks, err)
 	return _c
 }
 
-func (_c *MockStorage_GetTasksByPriority_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, priority int) ([]*entity.UserTasksTab, error)) *MockStorage_GetTasksByPriority_Call {
+func (_c *MockStorage_GetTasksByPriority_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, priority int, limit uint64, offset uint64) ([]*entity.Task, error)) *MockStorage_GetTasksByPriority_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetTasksByTag provides a mock function for the type MockStorage
-func (_mock *MockStorage) GetTasksByTag(ctx context.Context, userID uuid.UUID, tag string) ([]*entity.UserTasksTab, error) {
-	ret := _mock.Called(ctx, userID, tag)
+func (_mock *MockStorage) GetTasksByTag(ctx context.Context, userID uuid.UUID, tagID int64, limit uint64, offset uint64) ([]*entity.Task, error) {
+	ret := _mock.Called(ctx, userID, tagID, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTasksByTag")
 	}
 
-	var r0 []*entity.UserTasksTab
+	var r0 []*entity.Task
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) ([]*entity.UserTasksTab, error)); ok {
-		return returnFunc(ctx, userID, tag)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64, uint64, uint64) ([]*entity.Task, error)); ok {
+		return returnFunc(ctx, userID, tagID, limit, offset)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) []*entity.UserTasksTab); ok {
-		r0 = returnFunc(ctx, userID, tag)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64, uint64, uint64) []*entity.Task); ok {
+		r0 = returnFunc(ctx, userID, tagID, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*entity.UserTasksTab)
+			r0 = ret.Get(0).([]*entity.Task)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
-		r1 = returnFunc(ctx, userID, tag)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int64, uint64, uint64) error); ok {
+		r1 = returnFunc(ctx, userID, tagID, limit, offset)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1000,12 +1671,14 @@ type MockStorage_GetTasksByTag_Call struct {
 // GetTasksByTag is a helper method to define mock.On call
 //   - ctx context.Context
 //   - userID uuid.UUID
-//   - tag string
-func (_e *MockStorage_Expecter) GetTasksByTag(ctx interface{}, userID interface{}, tag interface{}) *MockStorage_GetTasksByTag_Call {
-	return &MockStorage_GetTasksByTag_Call{Call: _e.mock.On("GetTasksByTag", ctx, userID, tag)}
+//   - tagID int64
+//   - limit uint64
+//   - offset uint64
+func (_e *MockStorage_Expecter) GetTasksByTag(ctx interface{}, userID interface{}, tagID interface{}, limit interface{}, offset interface{}) *MockStorage_GetTasksByTag_Call {
+	return &MockStorage_GetTasksByTag_Call{Call: _e.mock.On("GetTasksByTag", ctx, userID, tagID, limit, offset)}
 }
 
-func (_c *MockStorage_GetTasksByTag_Call) Run(run func(ctx context.Context, userID uuid.UUID, tag string)) *MockStorage_GetTasksByTag_Call {
+func (_c *MockStorage_GetTasksByTag_Call) Run(run func(ctx context.Context, userID uuid.UUID, tagID int64, limit uint64, offset uint64)) *MockStorage_GetTasksByTag_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -1015,51 +1688,61 @@ func (_c *MockStorage_GetTasksByTag_Call) Run(run func(ctx context.Context, user
 		if args[1] != nil {
 			arg1 = args[1].(uuid.UUID)
 		}
-		var arg2 string
+		var arg2 int64
 		if args[2] != nil {
-			arg2 = args[2].(string)
+			arg2 = args[2].(int64)
+		}
+		var arg3 uint64
+		if args[3] != nil {
+			arg3 = args[3].(uint64)
+		}
+		var arg4 uint64
+		if args[4] != nil {
+			arg4 = args[4].(uint64)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
+			arg3,
+			arg4,
 		)
 	})
 	return _c
 }
 
-func (_c *MockStorage_GetTasksByTag_Call) Return(userTasksTabs []*entity.UserTasksTab, err error) *MockStorage_GetTasksByTag_Call {
-	_c.Call.Return(userTasksTabs, err)
+func (_c *MockStorage_GetTasksByTag_Call) Return(tasks []*entity.Task, err error) *MockStorage_GetTasksByTag_Call {
+	_c.Call.Return(tasks, err)
 	return _c
 }
 
-func (_c *MockStorage_GetTasksByTag_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, tag string) ([]*entity.UserTasksTab, error)) *MockStorage_GetTasksByTag_Call {
+func (_c *MockStorage_GetTasksByTag_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, tagID int64, limit uint64, offset uint64) ([]*entity.Task, error)) *MockStorage_GetTasksByTag_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ListTasks provides a mock function for the type MockStorage
-func (_mock *MockStorage) ListTasks(ctx context.Context, userID uuid.UUID) ([]*entity.UserTasksTab, error) {
-	ret := _mock.Called(ctx, userID)
+func (_mock *MockStorage) ListTasks(ctx context.Context, userID uuid.UUID, limit uint64, offset uint64) ([]*entity.Task, error) {
+	ret := _mock.Called(ctx, userID, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListTasks")
 	}
 
-	var r0 []*entity.UserTasksTab
+	var r0 []*entity.Task
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*entity.UserTasksTab, error)); ok {
-		return returnFunc(ctx, userID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uint64, uint64) ([]*entity.Task, error)); ok {
+		return returnFunc(ctx, userID, limit, offset)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*entity.UserTasksTab); ok {
-		r0 = returnFunc(ctx, userID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uint64, uint64) []*entity.Task); ok {
+		r0 = returnFunc(ctx, userID, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*entity.UserTasksTab)
+			r0 = ret.Get(0).([]*entity.Task)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, userID)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uint64, uint64) error); ok {
+		r1 = returnFunc(ctx, userID, limit, offset)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1074,11 +1757,13 @@ type MockStorage_ListTasks_Call struct {
 // ListTasks is a helper method to define mock.On call
 //   - ctx context.Context
 //   - userID uuid.UUID
-func (_e *MockStorage_Expecter) ListTasks(ctx interface{}, userID interface{}) *MockStorage_ListTasks_Call {
-	return &MockStorage_ListTasks_Call{Call: _e.mock.On("ListTasks", ctx, userID)}
+//   - limit uint64
+//   - offset uint64
+func (_e *MockStorage_Expecter) ListTasks(ctx interface{}, userID interface{}, limit interface{}, offset interface{}) *MockStorage_ListTasks_Call {
+	return &MockStorage_ListTasks_Call{Call: _e.mock.On("ListTasks", ctx, userID, limit, offset)}
 }
 
-func (_c *MockStorage_ListTasks_Call) Run(run func(ctx context.Context, userID uuid.UUID)) *MockStorage_ListTasks_Call {
+func (_c *MockStorage_ListTasks_Call) Run(run func(ctx context.Context, userID uuid.UUID, limit uint64, offset uint64)) *MockStorage_ListTasks_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -1088,6 +1773,73 @@ func (_c *MockStorage_ListTasks_Call) Run(run func(ctx context.Context, userID u
 		if args[1] != nil {
 			arg1 = args[1].(uuid.UUID)
 		}
+		var arg2 uint64
+		if args[2] != nil {
+			arg2 = args[2].(uint64)
+		}
+		var arg3 uint64
+		if args[3] != nil {
+			arg3 = args[3].(uint64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_ListTasks_Call) Return(tasks []*entity.Task, err error) *MockStorage_ListTasks_Call {
+	_c.Call.Return(tasks, err)
+	return _c
+}
+
+func (_c *MockStorage_ListTasks_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, limit uint64, offset uint64) ([]*entity.Task, error)) *MockStorage_ListTasks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RemoveAllTagsFromTask provides a mock function for the type MockStorage
+func (_mock *MockStorage) RemoveAllTagsFromTask(ctx context.Context, taskID int64) error {
+	ret := _mock.Called(ctx, taskID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RemoveAllTagsFromTask")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+		r0 = returnFunc(ctx, taskID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockStorage_RemoveAllTagsFromTask_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RemoveAllTagsFromTask'
+type MockStorage_RemoveAllTagsFromTask_Call struct {
+	*mock.Call
+}
+
+// RemoveAllTagsFromTask is a helper method to define mock.On call
+//   - ctx context.Context
+//   - taskID int64
+func (_e *MockStorage_Expecter) RemoveAllTagsFromTask(ctx interface{}, taskID interface{}) *MockStorage_RemoveAllTagsFromTask_Call {
+	return &MockStorage_RemoveAllTagsFromTask_Call{Call: _e.mock.On("RemoveAllTagsFromTask", ctx, taskID)}
+}
+
+func (_c *MockStorage_RemoveAllTagsFromTask_Call) Run(run func(ctx context.Context, taskID int64)) *MockStorage_RemoveAllTagsFromTask_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
 		run(
 			arg0,
 			arg1,
@@ -1096,19 +1848,82 @@ func (_c *MockStorage_ListTasks_Call) Run(run func(ctx context.Context, userID u
 	return _c
 }
 
-func (_c *MockStorage_ListTasks_Call) Return(userTasksTabs []*entity.UserTasksTab, err error) *MockStorage_ListTasks_Call {
-	_c.Call.Return(userTasksTabs, err)
+func (_c *MockStorage_RemoveAllTagsFromTask_Call) Return(err error) *MockStorage_RemoveAllTagsFromTask_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockStorage_ListTasks_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID) ([]*entity.UserTasksTab, error)) *MockStorage_ListTasks_Call {
+func (_c *MockStorage_RemoveAllTagsFromTask_Call) RunAndReturn(run func(ctx context.Context, taskID int64) error) *MockStorage_RemoveAllTagsFromTask_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RemoveTagsFromTask provides a mock function for the type MockStorage
+func (_mock *MockStorage) RemoveTagsFromTask(ctx context.Context, tagsIDs []int64, taskID int64) error {
+	ret := _mock.Called(ctx, tagsIDs, taskID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RemoveTagsFromTask")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []int64, int64) error); ok {
+		r0 = returnFunc(ctx, tagsIDs, taskID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockStorage_RemoveTagsFromTask_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RemoveTagsFromTask'
+type MockStorage_RemoveTagsFromTask_Call struct {
+	*mock.Call
+}
+
+// RemoveTagsFromTask is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tagsIDs []int64
+//   - taskID int64
+func (_e *MockStorage_Expecter) RemoveTagsFromTask(ctx interface{}, tagsIDs interface{}, taskID interface{}) *MockStorage_RemoveTagsFromTask_Call {
+	return &MockStorage_RemoveTagsFromTask_Call{Call: _e.mock.On("RemoveTagsFromTask", ctx, tagsIDs, taskID)}
+}
+
+func (_c *MockStorage_RemoveTagsFromTask_Call) Run(run func(ctx context.Context, tagsIDs []int64, taskID int64)) *MockStorage_RemoveTagsFromTask_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []int64
+		if args[1] != nil {
+			arg1 = args[1].([]int64)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_RemoveTagsFromTask_Call) Return(err error) *MockStorage_RemoveTagsFromTask_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockStorage_RemoveTagsFromTask_Call) RunAndReturn(run func(ctx context.Context, tagsIDs []int64, taskID int64) error) *MockStorage_RemoveTagsFromTask_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateGroup provides a mock function for the type MockStorage
-func (_mock *MockStorage) UpdateGroup(ctx context.Context, group entity.Group) (*entity.Group, error) {
-	ret := _mock.Called(ctx, group)
+func (_mock *MockStorage) UpdateGroup(ctx context.Context, group entity.UpdateGroupRequest, userID uuid.UUID, groupID int64) (*entity.Group, error) {
+	ret := _mock.Called(ctx, group, userID, groupID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateGroup")
@@ -1116,18 +1931,18 @@ func (_mock *MockStorage) UpdateGroup(ctx context.Context, group entity.Group) (
 
 	var r0 *entity.Group
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.Group) (*entity.Group, error)); ok {
-		return returnFunc(ctx, group)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.UpdateGroupRequest, uuid.UUID, int64) (*entity.Group, error)); ok {
+		return returnFunc(ctx, group, userID, groupID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.Group) *entity.Group); ok {
-		r0 = returnFunc(ctx, group)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.UpdateGroupRequest, uuid.UUID, int64) *entity.Group); ok {
+		r0 = returnFunc(ctx, group, userID, groupID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*entity.Group)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, entity.Group) error); ok {
-		r1 = returnFunc(ctx, group)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, entity.UpdateGroupRequest, uuid.UUID, int64) error); ok {
+		r1 = returnFunc(ctx, group, userID, groupID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1141,24 +1956,36 @@ type MockStorage_UpdateGroup_Call struct {
 
 // UpdateGroup is a helper method to define mock.On call
 //   - ctx context.Context
-//   - group entity.Group
-func (_e *MockStorage_Expecter) UpdateGroup(ctx interface{}, group interface{}) *MockStorage_UpdateGroup_Call {
-	return &MockStorage_UpdateGroup_Call{Call: _e.mock.On("UpdateGroup", ctx, group)}
+//   - group entity.UpdateGroupRequest
+//   - userID uuid.UUID
+//   - groupID int64
+func (_e *MockStorage_Expecter) UpdateGroup(ctx interface{}, group interface{}, userID interface{}, groupID interface{}) *MockStorage_UpdateGroup_Call {
+	return &MockStorage_UpdateGroup_Call{Call: _e.mock.On("UpdateGroup", ctx, group, userID, groupID)}
 }
 
-func (_c *MockStorage_UpdateGroup_Call) Run(run func(ctx context.Context, group entity.Group)) *MockStorage_UpdateGroup_Call {
+func (_c *MockStorage_UpdateGroup_Call) Run(run func(ctx context.Context, group entity.UpdateGroupRequest, userID uuid.UUID, groupID int64)) *MockStorage_UpdateGroup_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 entity.Group
+		var arg1 entity.UpdateGroupRequest
 		if args[1] != nil {
-			arg1 = args[1].(entity.Group)
+			arg1 = args[1].(entity.UpdateGroupRequest)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		var arg3 int64
+		if args[3] != nil {
+			arg3 = args[3].(int64)
 		}
 		run(
 			arg0,
 			arg1,
+			arg2,
+			arg3,
 		)
 	})
 	return _c
@@ -1169,14 +1996,14 @@ func (_c *MockStorage_UpdateGroup_Call) Return(group1 *entity.Group, err error) 
 	return _c
 }
 
-func (_c *MockStorage_UpdateGroup_Call) RunAndReturn(run func(ctx context.Context, group entity.Group) (*entity.Group, error)) *MockStorage_UpdateGroup_Call {
+func (_c *MockStorage_UpdateGroup_Call) RunAndReturn(run func(ctx context.Context, group entity.UpdateGroupRequest, userID uuid.UUID, groupID int64) (*entity.Group, error)) *MockStorage_UpdateGroup_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateProject provides a mock function for the type MockStorage
-func (_mock *MockStorage) UpdateProject(ctx context.Context, project entity.Project) (*entity.Project, error) {
-	ret := _mock.Called(ctx, project)
+func (_mock *MockStorage) UpdateProject(ctx context.Context, project entity.UpdateProjectRequest, projectID int64, userID uuid.UUID) (*entity.Project, error) {
+	ret := _mock.Called(ctx, project, projectID, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateProject")
@@ -1184,18 +2011,18 @@ func (_mock *MockStorage) UpdateProject(ctx context.Context, project entity.Proj
 
 	var r0 *entity.Project
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.Project) (*entity.Project, error)); ok {
-		return returnFunc(ctx, project)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.UpdateProjectRequest, int64, uuid.UUID) (*entity.Project, error)); ok {
+		return returnFunc(ctx, project, projectID, userID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.Project) *entity.Project); ok {
-		r0 = returnFunc(ctx, project)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entity.UpdateProjectRequest, int64, uuid.UUID) *entity.Project); ok {
+		r0 = returnFunc(ctx, project, projectID, userID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*entity.Project)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, entity.Project) error); ok {
-		r1 = returnFunc(ctx, project)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, entity.UpdateProjectRequest, int64, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, project, projectID, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1209,24 +2036,36 @@ type MockStorage_UpdateProject_Call struct {
 
 // UpdateProject is a helper method to define mock.On call
 //   - ctx context.Context
-//   - project entity.Project
-func (_e *MockStorage_Expecter) UpdateProject(ctx interface{}, project interface{}) *MockStorage_UpdateProject_Call {
-	return &MockStorage_UpdateProject_Call{Call: _e.mock.On("UpdateProject", ctx, project)}
+//   - project entity.UpdateProjectRequest
+//   - projectID int64
+//   - userID uuid.UUID
+func (_e *MockStorage_Expecter) UpdateProject(ctx interface{}, project interface{}, projectID interface{}, userID interface{}) *MockStorage_UpdateProject_Call {
+	return &MockStorage_UpdateProject_Call{Call: _e.mock.On("UpdateProject", ctx, project, projectID, userID)}
 }
 
-func (_c *MockStorage_UpdateProject_Call) Run(run func(ctx context.Context, project entity.Project)) *MockStorage_UpdateProject_Call {
+func (_c *MockStorage_UpdateProject_Call) Run(run func(ctx context.Context, project entity.UpdateProjectRequest, projectID int64, userID uuid.UUID)) *MockStorage_UpdateProject_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 entity.Project
+		var arg1 entity.UpdateProjectRequest
 		if args[1] != nil {
-			arg1 = args[1].(entity.Project)
+			arg1 = args[1].(entity.UpdateProjectRequest)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 uuid.UUID
+		if args[3] != nil {
+			arg3 = args[3].(uuid.UUID)
 		}
 		run(
 			arg0,
 			arg1,
+			arg2,
+			arg3,
 		)
 	})
 	return _c
@@ -1237,7 +2076,93 @@ func (_c *MockStorage_UpdateProject_Call) Return(project1 *entity.Project, err e
 	return _c
 }
 
-func (_c *MockStorage_UpdateProject_Call) RunAndReturn(run func(ctx context.Context, project entity.Project) (*entity.Project, error)) *MockStorage_UpdateProject_Call {
+func (_c *MockStorage_UpdateProject_Call) RunAndReturn(run func(ctx context.Context, project entity.UpdateProjectRequest, projectID int64, userID uuid.UUID) (*entity.Project, error)) *MockStorage_UpdateProject_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateTag provides a mock function for the type MockStorage
+func (_mock *MockStorage) UpdateTag(ctx context.Context, tagID int64, name *string, color *string, userID uuid.UUID) (*entity.Tag, error) {
+	ret := _mock.Called(ctx, tagID, name, color, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateTag")
+	}
+
+	var r0 *entity.Tag
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *string, *string, uuid.UUID) (*entity.Tag, error)); ok {
+		return returnFunc(ctx, tagID, name, color, userID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *string, *string, uuid.UUID) *entity.Tag); ok {
+		r0 = returnFunc(ctx, tagID, name, color, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*entity.Tag)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *string, *string, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, tagID, name, color, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_UpdateTag_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateTag'
+type MockStorage_UpdateTag_Call struct {
+	*mock.Call
+}
+
+// UpdateTag is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tagID int64
+//   - name *string
+//   - color *string
+//   - userID uuid.UUID
+func (_e *MockStorage_Expecter) UpdateTag(ctx interface{}, tagID interface{}, name interface{}, color interface{}, userID interface{}) *MockStorage_UpdateTag_Call {
+	return &MockStorage_UpdateTag_Call{Call: _e.mock.On("UpdateTag", ctx, tagID, name, color, userID)}
+}
+
+func (_c *MockStorage_UpdateTag_Call) Run(run func(ctx context.Context, tagID int64, name *string, color *string, userID uuid.UUID)) *MockStorage_UpdateTag_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 *string
+		if args[2] != nil {
+			arg2 = args[2].(*string)
+		}
+		var arg3 *string
+		if args[3] != nil {
+			arg3 = args[3].(*string)
+		}
+		var arg4 uuid.UUID
+		if args[4] != nil {
+			arg4 = args[4].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_UpdateTag_Call) Return(tag *entity.Tag, err error) *MockStorage_UpdateTag_Call {
+	_c.Call.Return(tag, err)
+	return _c
+}
+
+func (_c *MockStorage_UpdateTag_Call) RunAndReturn(run func(ctx context.Context, tagID int64, name *string, color *string, userID uuid.UUID) (*entity.Tag, error)) *MockStorage_UpdateTag_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -4,7 +4,6 @@ import (
 	"bernard/internal/domain/entity"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
@@ -21,7 +20,7 @@ func (s *Cache) SetTempTasks(ctx context.Context, userTasks *TempUserTasks) erro
 
 	tasks, err := json.Marshal(userTasks.Tasks)
 	if err != nil {
-		return errors.New(fmt.Sprintf("%s: cannot marshal data - %s", op, err))
+		return fmt.Errorf("%s: cannot marshal data - %s", op, err)
 	}
 
 	err = s.DB.HSet(ctx, fmt.Sprintf("TempUserTasks:%v", userTasks.UserID), map[string]any{
@@ -30,12 +29,12 @@ func (s *Cache) SetTempTasks(ctx context.Context, userTasks *TempUserTasks) erro
 	}).Err()
 
 	if err != nil {
-		return errors.New(fmt.Sprintf("%s: cannot set data - %s", op, err))
+		return fmt.Errorf("%s: cannot set data - %s", op, err)
 	}
 
 	err = s.DB.Expire(ctx, fmt.Sprintf("TempUserTasks:%v", userTasks.UserID), time.Hour).Err()
 	if err != nil {
-		return errors.New(fmt.Sprintf("%s: cannot set ttl - %s", op, err))
+		return fmt.Errorf("%s: cannot set ttl - %s", op, err)
 	}
 
 	return nil
@@ -46,14 +45,14 @@ func (s *Cache) GetTempTasks(ctx context.Context, userID uuid.UUID) (*TempUserTa
 
 	val, err := s.DB.HGetAll(ctx, fmt.Sprintf("TempUserTasks:%v", userID)).Result()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot get data - %s", op, err))
+		return nil, fmt.Errorf("%s: cannot get data - %s", op, err)
 	}
 
 	var tasks []*entity.Task
 
 	err = json.Unmarshal([]byte(val["tasks"]), &tasks)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: cannot unmarshal data - %s", op, err))
+		return nil, fmt.Errorf("%s: cannot unmarshal data - %s", op, err)
 	}
 
 	tempUserTasks := &TempUserTasks{
