@@ -96,3 +96,14 @@ func (u *UseCase) RemoveTagsFromTask(ctx context.Context, tagsIDs []int64, taskI
 
 	return nil
 }
+
+func (u *UseCase) RemoveAllTagsFromTask(ctx context.Context, taskID int64) error {
+	const op = "usecase.RemoveAllTagsFromTask"
+
+	err := u.DB.RemoveAllTagsFromTask(ctx, taskID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}

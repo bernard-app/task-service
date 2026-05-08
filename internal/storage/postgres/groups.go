@@ -132,7 +132,7 @@ func (s *Storage) GetGroup(ctx context.Context, userID uuid.UUID, groupID int64)
 	query, args, err := sq.
 		Select("id", "name", "project_id").
 		From("groups").
-		Where(sq.Eq{"user_id": userID, "group_id": groupID}).
+		Where(sq.Eq{"user_id": userID, "id": groupID}).
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {

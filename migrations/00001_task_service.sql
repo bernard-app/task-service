@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS tasks(
     description TEXT,
     priority INT NOT NULL,
     status TEXT,
-    start_time TIMESTAMPTZ NOT NULL,
+    start_time TIMESTAMPTZ,
     deadline TIMESTAMPTZ,
     group_id BIGINT REFERENCES groups(id) ON DELETE CASCADE,
     project_id BIGINT REFERENCES projects(id) ON DELETE CASCADE,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS tags (
     color VARCHAR(7) NOT NULL,
     is_system BOOLEAN DEFAULT false,
     user_id UUID NOT NULL,
-    project_id BIGINT NOT NULL
+    project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS tasks_tags (
@@ -58,3 +58,5 @@ SELECT 'down SQL query';
 DROP TABLE IF EXISTS tasks CASCADE;
 DROP TABLE IF EXISTS groups CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
+DROP TABLE IF EXISTS tags CASCADE;
+DROP TABLE IF EXISTS tasks_tags CASCADE;

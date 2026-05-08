@@ -16,12 +16,12 @@ func (s *Storage) CreateTask(ctx context.Context, task entity.Task) (*entity.Tas
 	const op = "storage.CreateTask"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Insert("tasks").
-		Columns("name", "description", "priority", "status", "start_time", "deadline", "group_id", "user_id", "created_at", "updated_at").
-		Values(&task.Name, &task.Description, &task.Priority, &task.Status, &task.StartTime, &task.Deadline, &task.GroupID, &task.UserID, time.Now(), time.Now()).
-		Suffix("RETURNING id, name, description, priority, status, start_time, deadline, group_id, user_id, created_at, updated_at, is_archived").
+		Columns("name", "description", "priority", "status", "start_time", "deadline", "group_id", "project_id", "user_id", "created_at", "updated_at").
+		Values(&task.Name, &task.Description, &task.Priority, &task.Status, &task.StartTime, &task.Deadline, &task.GroupID, &task.ProjectID, &task.UserID, time.Now(), time.Now()).
+		Suffix("RETURNING id, name, description, priority, status, start_time, deadline, group_id, project_id, user_id, created_at, updated_at, is_archived").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -34,14 +34,14 @@ func (s *Storage) CreateTask(ctx context.Context, task entity.Task) (*entity.Tas
 	err = tx.QueryRow(ctx, query, args...).
 		Scan(
 			&createdTask.ID, &createdTask.Name, &createdTask.Description, &createdTask.Priority,
-			&createdTask.Status, &createdTask.StartTime, &createdTask.Deadline, &createdTask.GroupID,
+			&createdTask.Status, &createdTask.StartTime, &createdTask.Deadline, &createdTask.GroupID, &createdTask.ProjectID,
 			&createdTask.UserID, &createdTask.CreatedAt, &createdTask.UpdatedAt, &createdTask.IsArchived,
 		)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return nil, fmt.Errorf("%s: group does not exists", op)
+			return nil, fmt.Errorf("%s: group or project does not exists", op)
 		}
 
 		return nil, fmt.Errorf("%s: cannot scan row: %s", op, err.Error())
@@ -78,6 +78,10 @@ func updateBuilder(task entity.UpdateTaskRequest, taskID int64, userID uuid.UUID
 		builder = builder.Set("group_id", *task.GroupID)
 		hasUpdate = true
 	}
+	if task.ProjectID != nil {
+		builder = builder.Set("project_id", *task.ProjectID)
+		hasUpdate = true
+	}
 	if task.StartTime != nil {
 		builder = builder.Set("start_time", task.StartTime)
 		hasUpdate = true
@@ -100,14 +104,14 @@ func (s *Storage) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 	const op = "storage.UpdateTask"
 
 	tx := s.getEngine(ctx)
-	
+
 	builder, err := updateBuilder(task, taskID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", err, op)
 	}
 
 	query, args, err := builder.
-		Suffix("RETURNING id, name, description, priority, status, start_time, deadline, group_id, user_id").
+		Suffix("RETURNING id, name, description, priority, status, start_time, deadline, group_id, project_id, user_id").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
@@ -117,7 +121,7 @@ func (s *Storage) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 	var UpdatedTask entity.Task
 
 	err = tx.QueryRow(ctx, query, args...).
-		Scan(&UpdatedTask.ID, &UpdatedTask.Name, &UpdatedTask.Description, &UpdatedTask.Priority, &UpdatedTask.Status, &UpdatedTask.StartTime, &UpdatedTask.Deadline, &UpdatedTask.GroupID, &UpdatedTask.UserID)
+		Scan(&UpdatedTask.ID, &UpdatedTask.Name, &UpdatedTask.Description, &UpdatedTask.Priority, &UpdatedTask.Status, &UpdatedTask.StartTime, &UpdatedTask.Deadline, &UpdatedTask.GroupID, &UpdatedTask.ProjectID, &UpdatedTask.UserID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
@@ -137,7 +141,7 @@ func (s *Storage) DeleteTask(ctx context.Context, userID uuid.UUID, id int64) er
 	const op = "storage.DeleteTask"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Delete("tasks").
 		Where(sq.Eq{"id": id, "user_id": userID}).
@@ -165,7 +169,7 @@ func (s *Storage) GetTask(ctx context.Context, id int64, userID uuid.UUID) (*ent
 	const op = "storage.GetTask"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Select(
 			"id", "name", "description", "priority", "status", "start_time", "deadline",
@@ -185,7 +189,7 @@ func (s *Storage) GetTask(ctx context.Context, id int64, userID uuid.UUID) (*ent
 	var task entity.Task
 
 	err = tx.QueryRow(ctx, query, args...).Scan(
-		&task.ID, &task.Name, &task.Description, &task.Priority, &task.Status, &task.StartTime, &task.Deadline, 
+		&task.ID, &task.Name, &task.Description, &task.Priority, &task.Status, &task.StartTime, &task.Deadline,
 		&task.GroupID, &task.ProjectID, &task.UserID, &task.CreatedAt, &task.UpdatedAt, &task.IsArchived,
 	)
 	if err != nil {
@@ -197,7 +201,7 @@ func (s *Storage) GetTask(ctx context.Context, id int64, userID uuid.UUID) (*ent
 
 func (s *Storage) baseListTasksQuery() sq.SelectBuilder {
 	return sq.Select(
-		"t.id", "t.name", "t.description", "t.priority", "t.status", "t.start_time", "t.deadline", "t.group_id", "t.user_id", "t.created_at", "t.updated_at", "t.is_archived",
+		"t.id", "t.name", "t.description", "t.priority", "t.status", "t.start_time", "t.deadline", "t.group_id", "t.project_id", "t.user_id", "t.created_at", "t.updated_at", "t.is_archived",
 	).
 		From("tasks t").
 		LeftJoin("tasks_tags tt ON t.id = tt.task_id").
@@ -284,7 +288,7 @@ func (s *Storage) getTasks(ctx context.Context, query string, args []any) ([]*en
 	const op = "storage.GetTasks"
 
 	tx := s.getEngine(ctx)
-	
+
 	var tasks []*entity.Task
 
 	rows, err := tx.Query(ctx, query, args...)
@@ -298,7 +302,7 @@ func (s *Storage) getTasks(ctx context.Context, query string, args []any) ([]*en
 		var task entity.Task
 
 		err = rows.Scan(
-			&task.ID, &task.Name, &task.Description, &task.Priority, &task.Status, &task.StartTime, &task.Deadline, 
+			&task.ID, &task.Name, &task.Description, &task.Priority, &task.Status, &task.StartTime, &task.Deadline,
 			&task.GroupID, &task.ProjectID, &task.UserID, &task.CreatedAt, &task.UpdatedAt, &task.IsArchived,
 		)
 		if err != nil {
@@ -322,7 +326,7 @@ func (s *Storage) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.
 			"group_id", "project_id", "user_id", "created_at", "updated_at", "is_archived",
 		).
 		From("tasks").
-		Where(sq.Eq{"groupd_id": groupID, "user_id": userID}).
+		Where(sq.Eq{"group_id": groupID, "user_id": userID}).
 		Limit(limit).
 		Offset(offset).
 		PlaceholderFormat(sq.Dollar).
@@ -361,7 +365,7 @@ func (s *Storage) ArchiveTask(ctx context.Context, userID uuid.UUID, taskID int6
 	const op = "storage.ArchiveTask"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Update("tasks").
 		Set("is_archived", true).
@@ -402,7 +406,7 @@ func (s *Storage) ArchiveOldTasks(ctx context.Context) (int64, error) {
 	const op = "storage.ArchiveOldTasks"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Update("tasks").
 		Set("is_archived", true).
@@ -422,6 +426,6 @@ func (s *Storage) ArchiveOldTasks(ctx context.Context) (int64, error) {
 	}
 
 	rowsAffected := result.RowsAffected()
-	
+
 	return rowsAffected, nil
 }

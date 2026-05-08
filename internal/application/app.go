@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type Application struct {
@@ -40,12 +41,14 @@ func (a *Application) Run(ctx context.Context) error {
 	err := a.container.Init(ctx)
 	if err != nil {
 		a.log.Error("failed to init dependencies dicontainer", "error", err)
+		
 		return err
 	}
 
 	listener, err := net.Listen("tcp", a.cfg.HTTPServer.Address)
 	if err != nil {
 		a.log.Error("failed to listen", "error", err)
+	
 		return err
 	}
 
@@ -53,6 +56,8 @@ func (a *Application) Run(ctx context.Context) error {
 
 	th.Register(a.grpcServer, a.container.UseCase, a.log)
 
+	reflection.Register(a.grpcServer)
+	
 	a.wg.Go(
 		func() {
 			a.container.UseCase.StartArchiveWorker(ctx)
@@ -63,7 +68,8 @@ func (a *Application) Run(ctx context.Context) error {
 		func() {
 			a.log.Info("Run: server started", "address", a.cfg.HTTPServer.Address)
 
-			if err := a.grpcServer.Serve(listener); err != nil {
+			err := a.grpcServer.Serve(listener)
+			if err != nil {
 				a.log.Error("failed to serve", "error", err)
 			}
 		},

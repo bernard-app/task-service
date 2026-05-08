@@ -305,13 +305,7 @@ func TestUseCase_GetListTask(t *testing.T) {
 
 	type args struct {
 		ctx      context.Context
-		userID   uuid.UUID
-		priority *int
-		tagID    *int64
-		from     *time.Time
-		to       *time.Time
-		limit    uint64
-		offset   uint64
+		taskFilter entity.TasksFilter
 	}
 
 	tests := []struct {
@@ -325,9 +319,11 @@ func TestUseCase_GetListTask(t *testing.T) {
 			name: "success non-filter",
 			args: args{
 				ctx:    context.Background(),
-				userID: uuid.New(),
-				limit:  uint64(5),
-				offset: uint64(0),
+				taskFilter: entity.TasksFilter{
+					UserID: uuid.New(),
+					Limit: uint64(5),
+					Offset: uint64(0),
+				},
 			},
 			want:    []*entity.UserTasksTab{},
 			wantErr: false,
@@ -336,9 +332,11 @@ func TestUseCase_GetListTask(t *testing.T) {
 			name: "error with userID",
 			args: args{
 				ctx:    context.Background(),
-				userID: uuid.Nil,
-				limit:  uint64(5),
-				offset: uint64(0),
+				taskFilter: entity.TasksFilter{
+					UserID: uuid.New(),
+					Limit: uint64(5),
+					Offset: uint64(0),
+				},
 			},
 			want:    nil,
 			wantErr: true,
@@ -347,22 +345,12 @@ func TestUseCase_GetListTask(t *testing.T) {
 			name: "error with priority",
 			args: args{
 				ctx:      context.Background(),
-				userID:   uuid.New(),
-				priority: utils.Ptr(1),
-				limit:    uint64(5),
-				offset:   uint64(0),
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "error with date from",
-			args: args{
-				ctx:    context.Background(),
-				userID: uuid.New(),
-				from:   utils.Ptr(time.Now()),
-				limit:  uint64(5),
-				offset: uint64(0),
+				taskFilter: entity.TasksFilter{
+					UserID: uuid.New(),
+					Priority: utils.Ptr(1),
+					Limit: uint64(5),
+					Offset: uint64(0),
+				},
 			},
 			want:    nil,
 			wantErr: true,
@@ -371,11 +359,13 @@ func TestUseCase_GetListTask(t *testing.T) {
 			name: "error with date to",
 			args: args{
 				ctx:    context.Background(),
-				userID: uuid.New(),
-				from:   utils.Ptr(time.Now()),
-				to:     nil,
-				limit:  uint64(5),
-				offset: uint64(0),
+				taskFilter: entity.TasksFilter{
+					UserID: uuid.New(),
+					From: utils.Ptr(time.Now()),
+					To:  utils.Ptr(time.Now()),
+					Limit: uint64(5),
+					Offset: uint64(0),
+				},
 			},
 			want:    nil,
 			wantErr: true,
@@ -394,7 +384,7 @@ func TestUseCase_GetListTask(t *testing.T) {
 				DB:     mockStorage,
 			}
 
-			got, err := u.GetListTask(tt.args.ctx, tt.args.userID, tt.args.priority, tt.args.tagID, tt.args.from, tt.args.to, tt.args.limit, tt.args.offset)
+			got, err := u.GetListTask(tt.args.ctx, tt.args.taskFilter)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetListTask() error = %v, wantErr %v", err, tt.wantErr)
 			}

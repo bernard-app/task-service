@@ -17,6 +17,7 @@ func (t *TaskHandler) CreateTask(ctx context.Context, req *taskv1.CreateTaskRequ
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
+
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -38,13 +39,14 @@ func (t *TaskHandler) CreateTask(ctx context.Context, req *taskv1.CreateTaskRequ
 		StartTime:   &startTime,
 		Deadline:    &deadline,
 		GroupID:     req.GroupId,
-		ProjectID: req.ProjectId,
+		ProjectID:   req.ProjectId,
 		UserID:      userID,
 	}
 
 	createdTask, err := t.uc.CreateTask(ctx, task, req.GetTagIds())
 	if err != nil {
 		t.log.Error("Failed to create task", "error", err, "operation", op)
+
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -59,34 +61,50 @@ func (t *TaskHandler) UpdateTask(ctx context.Context, req *taskv1.UpdateTaskRequ
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
+
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
+	var task entity.UpdateTaskRequest
+
 	taskID := req.GetTaskId()
 
-	var startTime time.Time
-	if req.GetStartTime() != nil {
-		startTime = req.GetStartTime().AsTime()
+	if req.Description != nil {
+		task.Description = req.Description
 	}
 
-	var deadline time.Time
-	if req.GetDeadline() != nil {
-		deadline = req.GetDeadline().AsTime()
+	if req.Priority != nil {
+		priority := int(req.GetPriority())
+		task.Priority = &priority
 	}
 
-	task := entity.UpdateTaskRequest{
-		Name:        req.Name,
-		Description: req.Description,
-		Priority:    utils.Ptr(int(req.GetPriority())),
-		Status:      req.Status,
-		GroupID:     req.GroupId,
-		StartTime:   &startTime,
-		Deadline:    &deadline,
+	if req.Status != nil {
+		task.Status = req.Status
+	}
+
+	if req.TagIds != nil {
+		tags := req.GetTagIds()
+		task.TagsIDs = &tags
+	}
+
+	if req.GroupId != nil {
+		task.GroupID = req.GroupId
+	}
+
+	if req.StartTime != nil {
+		startTime := req.GetStartTime().AsTime()
+		task.StartTime = &startTime
+	}
+
+	if req.Deadline != nil {
+		deadline := req.GetDeadline().AsTime()
+		task.Deadline = &deadline
 	}
 
 	updatedTask, err := t.uc.UpdateTask(ctx, task, userID, taskID)
 	if err != nil {
 		t.log.Error("Failed to update task", "error", err, "operation", op)
+
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -101,6 +119,7 @@ func (t *TaskHandler) DeleteTask(ctx context.Context, req *taskv1.DeleteTaskRequ
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
+
 		return &taskv1.DeleteTaskResponse{Success: false}, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -109,6 +128,7 @@ func (t *TaskHandler) DeleteTask(ctx context.Context, req *taskv1.DeleteTaskRequ
 	err = t.uc.DeleteTask(ctx, userID, taskID)
 	if err != nil {
 		t.log.Error("Failed to delete task", "error", err, "operation", op)
+
 		return &taskv1.DeleteTaskResponse{Success: false}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -123,6 +143,7 @@ func (t *TaskHandler) GetTask(ctx context.Context, req *taskv1.GetTaskRequest) (
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
+
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -131,6 +152,7 @@ func (t *TaskHandler) GetTask(ctx context.Context, req *taskv1.GetTaskRequest) (
 	task, err := t.uc.GetTask(ctx, taskID, userID)
 	if err != nil {
 		t.log.Error("failed to get task", "operation", op, "error", err)
+
 		return nil, status.Errorf(codes.Internal, "failed to get task: %v", err)
 	}
 
@@ -145,19 +167,38 @@ func (t *TaskHandler) GetListTask(ctx context.Context, req *taskv1.GetListTaskRe
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
+
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
-	priority := int(req.GetPriority())
-	tag := req.GetTagIds()
-	from := req.GetFrom().AsTime()
-	to := req.GetTo().AsTime()
-	limit := req.GetLimit()
-	offset := req.GetOffset()
+	var taskFilter entity.TasksFilter
 
-	tasks, err := t.uc.GetListTask(ctx, userID, &priority, &tag, &from, &to, limit, offset)
+	taskFilter.UserID = userID
+	taskFilter.Limit = req.Limit
+	taskFilter.Offset = req.Offset
+
+	if req.Priority != nil {
+		priority := int(req.GetPriority())
+		taskFilter.Priority = &priority
+	}
+
+	if req.TagIds != nil {
+		taskFilter.Tag = req.TagIds
+	}
+	if req.From != nil {
+		from := req.From.AsTime()
+		taskFilter.From = &from
+	}
+
+	if req.To != nil {
+		to := req.To.AsTime()
+		taskFilter.To = &to
+	}
+
+	tasks, err := t.uc.GetListTask(ctx, taskFilter)
 	if err != nil {
 		t.log.Error("error getting tasks", "operation", op, "error", err)
+
 		return nil, status.Errorf(codes.Internal, "failed to get tasks: %v", err)
 	}
 
@@ -177,12 +218,14 @@ func (t *TaskHandler) GetGroupTasks(ctx context.Context, req *taskv1.GetGroupTas
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
+
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	tasks, err := t.uc.GetGroupTasks(ctx, req.GetGroupId(), userID, req.GetLimit(), req.GetOffset())
 	if err != nil {
 		t.log.Error("Failed to get group tasks", "op", op, "error", err)
+
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -203,6 +246,7 @@ func (t *TaskHandler) ArchiveTask(ctx context.Context, req *taskv1.ArchiveTaskRe
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user ID", "error", err, "operation", op)
+
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -211,6 +255,7 @@ func (t *TaskHandler) ArchiveTask(ctx context.Context, req *taskv1.ArchiveTaskRe
 	task, err := t.uc.ArchiveTask(ctx, userID, taskID)
 	if err != nil {
 		t.log.Error("failed to archive task", "error", err, "operation", op)
+
 		return nil, status.Errorf(codes.Internal, "failed to archive task: %v", err)
 	}
 

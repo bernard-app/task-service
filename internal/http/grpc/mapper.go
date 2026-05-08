@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"bernard/internal/domain/entity"
+	"math"
 
 	taskv1 "github.com/bernard-app/bernard-protos/pkg/task_v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -22,7 +23,11 @@ func mapTask(t *entity.Task) *taskv1.Task {
 			UserId: tag.UserID.String(),
 		})
 	}
-	intPriority := int32(*t.Priority)
+
+	var priority int32
+	if *t.Priority < math.MaxInt32 && *t.Priority > math.MinInt32 {
+		priority = int32(*t.Priority)
+	}
 
 	var taskTime *timestamppb.Timestamp
 	if t.StartTime != nil {
@@ -38,7 +43,7 @@ func mapTask(t *entity.Task) *taskv1.Task {
 		TaskId:      t.ID,
 		Name:        t.Name,
 		Description: t.Description,
-		Priority:    &intPriority,
+		Priority:    &priority,
 		Tags:        grpcTags,
 		Status:      t.Status,
 		GroupId:     t.GroupID,

@@ -14,6 +14,14 @@ github.com/bernard-app/bernard-protos v0.0.8 h1:d77lw7ckL/4wF0KeIaADNEg9Yq3vDBQq
 github.com/bernard-app/bernard-protos v0.0.8/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
 github.com/bernard-app/bernard-protos v0.0.9 h1:gDKiSCj7YAt7tn9oUrohyCXC3yfVMqZIWK14QqGGXYk=
 github.com/bernard-app/bernard-protos v0.0.9/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
+github.com/bernard-app/bernard-protos v0.0.10 h1:f0I8uywikMeNjRJorGzT+ImggOnkz+tGf5aoHYtde84=
+github.com/bernard-app/bernard-protos v0.0.10/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
+github.com/bernard-app/bernard-protos v0.0.11 h1:rksn7Zshduks8gbyFvhdJQjAOrdQG+6mWA0jWVhtc/Y=
+github.com/bernard-app/bernard-protos v0.0.11/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
+github.com/bernard-app/bernard-protos v0.0.12 h1:4/z3l0BsWPNjOd77Pt9emNzyhfoSPpoKlEm3RK4VYDI=
+github.com/bernard-app/bernard-protos v0.0.12/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
+github.com/bernard-app/bernard-protos v0.0.13 h1:UHMOILV+bowkf6RIXfdf7qIl+X9l1fVxayDC0qmtLZA=
+github.com/bernard-app/bernard-protos v0.0.13/go.mod h1:tqgafTiBOJSdC6DxkMRVqglBr9/csvtMq4X+TLq1iz4=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
 github.com/bsm/ginkgo/v2 v2.12.0/go.mod h1:SwYbGRRDovPVboqFv0tPTcG1sN61LM1Z4ARdbAV9g4c=
 github.com/bsm/gomega v1.27.10 h1:yeMWxP2pV2fG3FgAODIY8EiRE3dy0aeFYt4l7wh6yKA=
