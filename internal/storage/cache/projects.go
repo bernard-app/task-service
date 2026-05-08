@@ -4,71 +4,55 @@ import (
 	"bernard/internal/domain/entity"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
-func (c *Cache) SetTempProject(ctx context.Context, userProject *entity.Project) error {
+func (c *Cache) SetTempProject(ctx context.Context, project *entity.Project) error {
 	const op = "cache.SetTempProject"
 
-	projectGroups, err := json.Marshal(userProject.Groups)
+	key := fmt.Sprintf("TempUserProject:%v:%v", project.ID, project.UserID)
+
+	data, err := json.Marshal(project)
 	if err != nil {
-		return fmt.Errorf("%s: cannot marshal data - %s", op, err)
+		return fmt.Errorf("%s: error marshal project", op)
 	}
 
-	err = c.DB.HSet(ctx, fmt.Sprintf("TempUserProject:%v:%v", userProject.ID, userProject.UserID), map[string]any{
-		"id":          userProject.ID,
-		"name":        userProject.Name,
-		"description": userProject.Description,
-		"groups":      projectGroups,
-		"user_id":     userProject.UserID,
-	}).Err()
-
-	if err != nil {
-		return fmt.Errorf("%s: cannot set data - %s", op, err)
-	}
-
-	err = c.DB.Expire(ctx, fmt.Sprintf("TempUserProject:%v:%v", userProject.ID, userProject.UserID), 2*time.Hour).Err()
-	if err != nil {
-		return fmt.Errorf("%s: cannot set ttl - %s", op, err)
-	}
-
-	return nil
+	return c.DB.Set(ctx, key, data, 60*time.Minute).Err()
 }
 
 func (c *Cache) GetTempProject(ctx context.Context, userID uuid.UUID, projectID int64) (*entity.Project, error) {
 	const op = "cache.GetTempProject"
+	
+	key := fmt.Sprintf("TempUserProject:%v:%v", projectID, userID)
 
-	val, err := c.DB.HGetAll(ctx, fmt.Sprintf("TempUserProject:%v:%v", projectID, userID)).Result()
+	val, err := c.DB.Get(ctx, key).Bytes()
 	if err != nil {
-		return nil, fmt.Errorf("%s: cannot get data - %s", op, err)
+		if errors.Is(err, redis.Nil) {
+			return nil, fmt.Errorf("%s: cache miss", op) 
+		}
+
+		return nil, fmt.Errorf("%s: cannot get data from redis - %w", op, err)
 	}
 
 	var project entity.Project
 
-	err = json.Unmarshal([]byte(val["id"]), &project.ID)
+	err = json.Unmarshal(val, &project)
 	if err != nil {
-		return nil, fmt.Errorf("%s: cannot unmarshal data - %s", op, err)
-	}
-
-	err = json.Unmarshal([]byte(val["name"]), &project.Name)
-	if err != nil {
-		return nil, fmt.Errorf("%s: cannot unmarshal data - %s", op, err)
-	}
-
-	err = json.Unmarshal([]byte(val["description"]), &project.Description)
-	if err != nil {
-		return nil, fmt.Errorf("%s: cannot unmarshal data - %s", op, err)
-	}
-
-	err = json.Unmarshal([]byte(val["groups"]), &project.Groups)
-	if err != nil {
-		return nil, fmt.Errorf("%s: cannot unmarshal data - %s", op, err)
+		return nil, fmt.Errorf("%s: cannot unmarshal project tree - %w", op, err)
 	}
 
 	project.UserID = userID
 
 	return &project, nil
+}
+
+func (c *Cache) InvalidateProjectCache(ctx context.Context, userID uuid.UUID, projectID int64) error {
+    key := fmt.Sprintf("TempUserProject:%v:%v", projectID, userID)
+    
+    return c.DB.Del(ctx, key).Err()
 }

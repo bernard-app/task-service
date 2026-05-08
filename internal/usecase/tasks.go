@@ -13,10 +13,10 @@ func (u *UseCase) CreateTask(ctx context.Context, task entity.Task, tagsIDs []in
 	const op = "usecase.CreateTask"
 
 	var createdTask *entity.Task
-	
+
 	err := u.Tx.ReadWrite(ctx, func(ctxTx context.Context) error {
 		var err error
-		
+
 		createdTask, err = u.DB.CreateTask(ctxTx, task)
 		if err != nil {
 			return err
@@ -34,7 +34,7 @@ func (u *UseCase) CreateTask(ctx context.Context, task entity.Task, tagsIDs []in
 
 		return nil, err
 	}
-
+  
 	return createdTask, nil
 }
 
@@ -42,7 +42,7 @@ func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 	const op = "usecase.UpdateTask"
 
 	var updatedTask *entity.Task
-	
+
 	err := u.Tx.ReadWrite(ctx, func(ctxTx context.Context) error {
 		var err error
 
@@ -67,17 +67,17 @@ func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 	})
 	if err != nil {
 		u.Log.Error("error updating task", "op", op, "error", err)
-	
+
 		return nil, err
 	}
 
 	updatedTask.Tags, err = u.DB.GetTaskTags(ctx, updatedTask.ID)
 	if err != nil {
 		u.Log.Error("error getting task tags", "op", op, "error", err)
-	
+
 		return nil, err
 	}
-
+	
 	return updatedTask, nil
 }
 
@@ -87,10 +87,10 @@ func (u *UseCase) DeleteTask(ctx context.Context, userID uuid.UUID, taskID int64
 	err := u.DB.DeleteTask(ctx, userID, taskID)
 	if err != nil {
 		u.Log.Error("error deleting task", "op", op, "error", err)
-	
+
 		return err
 	}
-
+	
 	return nil
 }
 
@@ -120,7 +120,7 @@ func (u *UseCase) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.
 	tasks, err := u.DB.GetGroupTasks(ctx, groupID, userID, limit, offset)
 	if err != nil {
 		u.Log.Error("error getting group tasks", "op", op, "error", err)
-	
+
 		return nil, err
 	}
 
@@ -128,11 +128,10 @@ func (u *UseCase) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.
 		task.Tags, err = u.DB.GetTaskTags(ctx, task.ID)
 		if err != nil {
 			u.Log.Error("error gettig task tags", "op", op, "error", err)
-		
+
 			return nil, err
 		}
 	}
-
 	return tasks, nil
 }
 
@@ -154,13 +153,13 @@ func (u *UseCase) GetListTask(ctx context.Context, userID uuid.UUID, priority *i
 	if priority != nil {
 		taskFilter.Priority = priority
 		taskFilter.FilterType = entity.PriorityFilter
-	} 
-	
+	}
+
 	if tagID != nil {
 		taskFilter.Tag = tagID
 		taskFilter.FilterType = entity.TagFilter
-	} 
-	
+	}
+
 	if from != nil {
 		taskFilter.From = from
 

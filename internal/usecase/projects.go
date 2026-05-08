@@ -17,6 +17,11 @@ func (u *UseCase) CreateProject(ctx context.Context, project entity.Project) (*e
 		return nil, err
 	}
 
+	err = u.Redis.InvalidateProjectCache(ctx, project.UserID, project.ID)
+	if err != nil {
+		u.Log.Error("error invalidating cache", "op", op, "error", err)
+	}
+	
 	return createdProject, nil
 }
 
@@ -28,7 +33,12 @@ func (u *UseCase) UpdateProject(ctx context.Context, project entity.UpdateProjec
 		u.Log.Error("error updating project", "op", op, "error", err)
 		return nil, err
 	}
-
+	
+	err = u.Redis.InvalidateProjectCache(ctx, userID, projectID)
+	if err != nil {
+		u.Log.Error("error invalidating cache", "op", op, "error", err)
+	}
+	
 	return updatedProject, nil
 }
 
@@ -45,14 +55,31 @@ func (u *UseCase) DeleteProject(ctx context.Context, projectID int64, userID uui
 		u.Log.Error("error deleting project", "op", op, "error", err)
 		return err
 	}
-
+	
+	err = u.Redis.InvalidateProjectCache(ctx, userID, projectID)
+	if err != nil {
+		u.Log.Error("error invalidating cache", "op", op, "error", err)
+	}
+	
 	return nil
 }
 
 func (u *UseCase) GetProject(ctx context.Context, projectID int64, userID uuid.UUID, limit, offset uint64) (*entity.Project, error) {
 	const op = "storage.GetProject"
 
-	project, err := u.DB.GetProject(ctx, projectID, userID)
+	isCache := true
+
+	project, err := u.Redis.GetTempProject(ctx, userID, projectID)
+	if err != nil {
+		u.Log.Error(err.Error())
+		isCache = false
+	}
+
+	if isCache {
+		return project, nil
+	}
+	
+	project, err = u.DB.GetProject(ctx, projectID, userID)
 	if err != nil {
 		u.Log.Error("error getting project", "op", op, "error", err)
 		return nil, err
@@ -66,6 +93,11 @@ func (u *UseCase) GetProject(ctx context.Context, projectID int64, userID uuid.U
 
 	for _, group := range project.Groups {
 		project.TaskCount += group.TaskCount
+	}
+
+	err = u.Redis.SetTempProject(ctx, project)
+	if err != nil {
+		u.Log.Error("error setting cache", "op", op, "error", err)
 	}
 
 	return project, nil

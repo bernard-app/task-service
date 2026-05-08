@@ -2,11 +2,14 @@ package dicontainer
 
 import (
 	"bernard/internal/config"
+	"bernard/internal/storage/cache"
 	"bernard/internal/storage/postgres"
 	"bernard/internal/usecase"
 	"context"
 	"fmt"
 	"log/slog"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type Container struct {
@@ -14,6 +17,7 @@ type Container struct {
 	Log     *slog.Logger
 	DB      *postgres.Storage
 	Tx      *postgres.PgxTxManager
+	Redis *cache.Cache
 	UseCase *usecase.UseCase
 }
 
@@ -33,7 +37,16 @@ func (c *Container) Init(ctx context.Context) error {
 	}
 
 	c.Tx = postgres.NewTxManager(c.DB.DB)
-	c.UseCase = usecase.New(c.DB, c.Log, c.Tx)
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     c.Cfg.Redis.Addr,
+		Password: c.Cfg.Redis.Password,
+		DB:       c.Cfg.Redis.DB,
+	})
+	
+	c.Redis = cache.New(rdb)
+	
+	c.UseCase = usecase.New(c.DB, c.Log, c.Tx, c.Redis)
 
 	return nil
 }

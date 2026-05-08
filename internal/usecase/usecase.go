@@ -50,16 +50,24 @@ type Storage interface {
 	ArchiveOldTasks(ctx context.Context) (int64, error)
 }
 
+type Redis interface {
+	SetTempProject(ctx context.Context, project *entity.Project) error
+	GetTempProject(ctx context.Context, userID uuid.UUID, projectID int64) (*entity.Project, error)
+	InvalidateProjectCache(ctx context.Context, userID uuid.UUID, projectID int64) error
+}
+
 type UseCase struct {
 	Log    *slog.Logger
 	DB     Storage
 	Tx     TxManager
+	Redis Redis
 }
 
-func New(db Storage, log *slog.Logger, tx TxManager) *UseCase {
+func New(db Storage, log *slog.Logger, tx TxManager, redis Redis) *UseCase {
 	return &UseCase{
 		Log:    log,
 		DB:     db,
 		Tx:     tx,
+		Redis: redis,
 	}
 }
