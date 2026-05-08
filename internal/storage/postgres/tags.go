@@ -15,12 +15,12 @@ func (s *Storage) CreateTag(ctx context.Context, tag entity.Tag) (*entity.Tag, e
 	const op = "storage.CreateTag"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Insert("tags").
-		Columns("name", "color", "user_id").
-		Values(tag.Name, tag.Color, tag.UserID).
-		Suffix("RETURNING id, name, color, user_id").
+		Columns("name", "color", "user_id", "project_id").
+		Values(tag.Name, tag.Color, tag.UserID, tag.ProjectID).
+		Suffix("RETURNING id, name, color, user_id, project_id").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -30,7 +30,7 @@ func (s *Storage) CreateTag(ctx context.Context, tag entity.Tag) (*entity.Tag, e
 
 	var createdTag entity.Tag
 
-	err = tx.QueryRow(ctx, query, args...).Scan(&createdTag.ID, &createdTag.Name, &createdTag.Color, &createdTag.UserID)
+	err = tx.QueryRow(ctx, query, args...).Scan(&createdTag.ID, &createdTag.Name, &createdTag.Color, &createdTag.UserID, &createdTag.ProjectID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)
 	}
@@ -42,7 +42,7 @@ func (s *Storage) UpdateTag(ctx context.Context, tagID int64, name *string, colo
 	const op = "storage.UpdateTag"
 
 	tx := s.getEngine(ctx)
-	
+
 	builder := sq.Update("tags")
 
 	if name != nil {
@@ -86,7 +86,7 @@ func (s *Storage) DeleteTag(ctx context.Context, tagID int64, userID uuid.UUID) 
 	const op = "storage.DeleteTag"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Delete("tags").
 		Where(sq.Eq{"id": tagID, "user_id": userID}).
@@ -97,7 +97,7 @@ func (s *Storage) DeleteTag(ctx context.Context, tagID int64, userID uuid.UUID) 
 		return fmt.Errorf("cannot build query. op: %s, error: %w", op, err)
 	}
 
-	err = tx.QueryRow(ctx, query, args...).Scan(&struct{}{})
+	_, err = tx.Exec(ctx, query, args...)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
@@ -115,9 +115,9 @@ func (s *Storage) GetTag(ctx context.Context, tagID int64, userID uuid.UUID) (*e
 	const op = "storage.GetTag"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
-		Select("id", "name", "color", "user_id").
+		Select("id", "name", "color", "user_id", "project_id").
 		From("tags").
 		Where(sq.And{
 			sq.Eq{"id": tagID},
@@ -132,7 +132,7 @@ func (s *Storage) GetTag(ctx context.Context, tagID int64, userID uuid.UUID) (*e
 
 	var tag entity.Tag
 
-	err = tx.QueryRow(ctx, query, args...).Scan(&tag.ID, tag.Name, tag.Color, tag.UserID)
+	err = tx.QueryRow(ctx, query, args...).Scan(&tag.ID, &tag.Name, &tag.Color, &tag.UserID, &tag.ProjectID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
@@ -150,7 +150,7 @@ func (s *Storage) GetTagList(ctx context.Context, userID uuid.UUID, limit, offse
 	const op = "storage.GetTagList"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Select("id", "name", "color", "user_id").
 		From("tags").
@@ -236,10 +236,14 @@ func (s *Storage) GetTaskTags(ctx context.Context, taskID int64) ([]*entity.Tag,
 func (s *Storage) AddTagsToTask(ctx context.Context, tagsIDs []int64, taskID int64) error {
 	const op = "storage.AddTagToTask"
 
+	if len(tagsIDs) == 0 {
+		return nil
+	}
+
 	tx := s.getEngine(ctx)
-	
+
 	tagsBuilder := sq.Insert("tasks_tags").Columns("task_id", "tag_id")
-	
+
 	for _, id := range tagsIDs {
 		tagsBuilder = tagsBuilder.Values(taskID, id)
 	}
@@ -271,9 +275,9 @@ func (s *Storage) RemoveTagsFromTask(ctx context.Context, tagsIDs []int64, taskI
 	const op = "storage.RemoveTagFromTask"
 
 	tx := s.getEngine(ctx)
-	
+
 	builder := sq.Delete("tasks_tags").Where(sq.Eq{"task_id": taskID, "tag_id": tagsIDs})
-	
+
 	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 
 	if err != nil {
@@ -302,15 +306,9 @@ func (s *Storage) RemoveAllTagsFromTask(ctx context.Context, taskID int64) error
 		return fmt.Errorf("%s: cannot build query: %w", op, err)
 	}
 
-	rows, err := tx.Exec(ctx, query, args...)
+	_, err = tx.Exec(ctx, query, args...)
 	if err != nil {
-		return fmt.Errorf("%s: cannot exec query: %w", op ,err)
-	}
-
-	rowsAffected := rows.RowsAffected()
-
-	if rowsAffected == 0 {
-		return fmt.Errorf("%s: no tags found: %w", op, err)
+		return fmt.Errorf("%s: cannot exec query: %w", op, err)
 	}
 
 	return nil

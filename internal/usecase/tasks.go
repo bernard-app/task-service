@@ -4,7 +4,6 @@ import (
 	"bernard/internal/domain/entity"
 	"context"
 	"errors"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -34,21 +33,36 @@ func (u *UseCase) CreateTask(ctx context.Context, task entity.Task, tagsIDs []in
 
 		return nil, err
 	}
-  
+
 	return createdTask, nil
+}
+
+func HasBaseUpdates(req entity.UpdateTaskRequest) bool {
+	return req.Name != nil ||
+		req.Description != nil ||
+		req.Priority != nil ||
+		req.Status != nil ||
+		req.Deadline != nil
 }
 
 func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64) (*entity.Task, error) {
 	const op = "usecase.UpdateTask"
 
-	var updatedTask *entity.Task
+	updatedTask := &entity.Task{}
 
 	err := u.Tx.ReadWrite(ctx, func(ctxTx context.Context) error {
 		var err error
 
-		updatedTask, err = u.DB.UpdateTask(ctxTx, task, userID, taskID)
-		if err != nil {
-			return err
+		if HasBaseUpdates(task) {
+			updatedTask, err = u.DB.UpdateTask(ctxTx, task, userID, taskID)
+			if err != nil {
+				return err
+			}
+		} else {
+			updatedTask, err = u.DB.GetTask(ctx, taskID, userID)
+			if err != nil {
+				return err
+			}
 		}
 
 		if task.TagsIDs != nil {
@@ -62,7 +76,6 @@ func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 				return err
 			}
 		}
-
 		return nil
 	})
 	if err != nil {
@@ -71,13 +84,13 @@ func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 		return nil, err
 	}
 
-	updatedTask.Tags, err = u.DB.GetTaskTags(ctx, updatedTask.ID)
+	updatedTask.Tags, err = u.DB.GetTaskTags(ctx, taskID)
 	if err != nil {
 		u.Log.Error("error getting task tags", "op", op, "error", err)
 
 		return nil, err
 	}
-	
+
 	return updatedTask, nil
 }
 
@@ -90,7 +103,7 @@ func (u *UseCase) DeleteTask(ctx context.Context, userID uuid.UUID, taskID int64
 
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -135,69 +148,56 @@ func (u *UseCase) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.
 	return tasks, nil
 }
 
-func (u *UseCase) GetListTask(ctx context.Context, userID uuid.UUID, priority *int, tagID *int64, from, to *time.Time, limit, offset uint64) ([]*entity.Task, error) {
+func (u *UseCase) GetListTask(ctx context.Context, taskFilter entity.TasksFilter) ([]*entity.Task, error) {
 	const op = "usecase.GetTasks"
 
 	var tasks []*entity.Task
 	var err error
 
-	if userID == uuid.Nil {
-		u.Log.Error("invalid userID", "op", op, "userID", userID, "priority", priority, "tag", tagID)
+	if taskFilter.UserID == uuid.Nil {
+		u.Log.Error("invalid userID", "op", op)
 
 		return nil, errors.New("invalid userID")
 	}
 
-	taskFilter := &entity.TasksFilter{}
-	taskFilter.UserID = userID
-
-	if priority != nil {
-		taskFilter.Priority = priority
+	if taskFilter.Priority != nil {
 		taskFilter.FilterType = entity.PriorityFilter
-	}
-
-	if tagID != nil {
-		taskFilter.Tag = tagID
+	} else if taskFilter.Tag != nil {
 		taskFilter.FilterType = entity.TagFilter
-	}
-
-	if from != nil {
-		taskFilter.From = from
-
-		if to != nil {
-			taskFilter.To = to
+	} else if taskFilter.From != nil {
+		if taskFilter.To != nil {
+			taskFilter.FilterType = entity.DateFilter
 		} else {
 			return nil, errors.New("invalid data")
 		}
-
-		taskFilter.FilterType = entity.DateFilter
 	} else {
 		taskFilter.FilterType = entity.None
 	}
 
 	switch taskFilter.FilterType {
 	case entity.TagFilter:
-		tasks, err = u.DB.GetTasksByTag(ctx, taskFilter.UserID, *taskFilter.Tag, limit, offset)
+		tasks, err = u.DB.GetTasksByTag(ctx, taskFilter.UserID, *taskFilter.Tag, taskFilter.Limit, taskFilter.Offset)
 		if err != nil {
 			u.Log.Error("error getting tasks", "op", op, "error", err)
 
 			return nil, err
 		}
 	case entity.PriorityFilter:
-		tasks, err = u.DB.GetTasksByPriority(ctx, taskFilter.UserID, *taskFilter.Priority, limit, offset)
+		tasks, err = u.DB.GetTasksByPriority(ctx, taskFilter.UserID, *taskFilter.Priority, taskFilter.Limit, taskFilter.Offset)
 		if err != nil {
 			u.Log.Error("error getting tasks", "op", op, "error", err)
 
 			return nil, err
 		}
 	case entity.DateFilter:
-		tasks, err = u.DB.GetTasksByDate(ctx, taskFilter.UserID, *taskFilter.From, *taskFilter.To, limit, offset)
+		tasks, err = u.DB.GetTasksByDate(ctx, taskFilter.UserID, *taskFilter.From, *taskFilter.To, taskFilter.Limit, taskFilter.Offset)
 		if err != nil {
 			u.Log.Error("error getting tasks", "op", op, "error", err)
 
 			return nil, err
 		}
 	case entity.None:
-		tasks, err = u.DB.ListTasks(ctx, taskFilter.UserID, limit, offset)
+		tasks, err = u.DB.ListTasks(ctx, taskFilter.UserID, taskFilter.Limit, taskFilter.Offset)
 		if err != nil {
 			u.Log.Error("error getting tasks", "op", op, "error", err)
 

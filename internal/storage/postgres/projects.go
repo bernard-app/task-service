@@ -79,7 +79,7 @@ func (s *Storage) UpdateProject(ctx context.Context, project entity.UpdateProjec
 
 	var updatedProject entity.Project
 
-	err = tx.QueryRow(ctx, query, args...).Scan(&updatedProject.ID, &updatedProject.Name, updatedProject.Description, &updatedProject.UserID)
+	err = tx.QueryRow(ctx, query, args...).Scan(&updatedProject.ID, &updatedProject.Name, &updatedProject.Description, &updatedProject.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: cannot update project: %s", op, err.Error())
 	}
@@ -93,9 +93,8 @@ func (s *Storage) DeleteProject(ctx context.Context, projectID int64, userID uui
 	tx := s.getEngine(ctx)
 	
 	query, args, err := sq.
-		Delete("groups").
+		Delete("projects").
 		Where(sq.Eq{"id": projectID, "user_id": userID}).
-		Suffix("RETURNING id, name, description, user_id").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 
@@ -103,9 +102,7 @@ func (s *Storage) DeleteProject(ctx context.Context, projectID int64, userID uui
 		return fmt.Errorf("%s: cannot build query: %s", op, err.Error())
 	}
 
-	var deletedProject entity.Project
-
-	err = tx.QueryRow(ctx, query, args...).Scan(&deletedProject.ID, &deletedProject.Name, deletedProject.Description, &deletedProject.UserID)
+	_, err = tx.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("%s: cannot delete project: %s", op, err.Error())
 	}

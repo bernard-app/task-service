@@ -36,7 +36,7 @@ func (t *TaskHandler) CreateProject(ctx context.Context, req *taskv1.CreateProje
 		Project: &taskv1.Project{
 			Id:          createdProject.ID,
 			Name:        createdProject.Name,
-			Description: *createdProject.Description,
+			Description: createdProject.Description,
 			UserId:      userID.String(),
 		},
 	}, nil
@@ -68,7 +68,7 @@ func (t *TaskHandler) UpdateProject(ctx context.Context, req *taskv1.UpdateProje
 		Project: &taskv1.Project{
 			Id:          updatedProject.ID,
 			Name:        updatedProject.Name,
-			Description: *updatedProject.Description,
+			Description: updatedProject.Description,
 			UserId:      userID.String(),
 		},
 	}, nil
@@ -126,7 +126,7 @@ func (t *TaskHandler) GetProject(ctx context.Context, req *taskv1.GetProjectRequ
 	}
 
 	if project.Description != nil {
-		grpcProject.Description = *project.Description
+		grpcProject.Description = project.Description
 	}
 
 	return &taskv1.GetProjectResponse{
@@ -157,7 +157,7 @@ func (t *TaskHandler) GetProjects(ctx context.Context, req *taskv1.GetProjectsRe
 		grpcProject := &taskv1.Project{
 			Id:          project.ID,
 			Name:        project.Name,
-			Description: *project.Description,
+			Description: project.Description,
 			UserId:      userID.String(),
 		}
 

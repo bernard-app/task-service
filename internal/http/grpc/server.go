@@ -20,5 +20,6 @@ func Register(gRPC *grpc.Server, uc *usecase.UseCase, log *slog.Logger) *TaskHan
 		log: log,
 	}
 	taskv1.RegisterTaskServiceServer(gRPC, th)
+	
 	return th
 }

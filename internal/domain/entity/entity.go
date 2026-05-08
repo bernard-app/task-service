@@ -55,11 +55,11 @@ type Project struct {
 }
 
 type Tag struct {
-	ID     int64     `json:"id"`
-	Name   string    `json:"name"`
-	Color  string    `json:"color"`
-	UserID uuid.UUID `json:"user_id"`
-	ProjectID int64 `json:"project_id"`
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Color     string    `json:"color"`
+	UserID    uuid.UUID `json:"user_id"`
+	ProjectID int64     `json:"project_id"`
 }
 
 type UserTasksTab struct {
@@ -93,6 +93,7 @@ type UpdateTaskRequest struct {
 	Priority    *int       `json:"priority"`
 	Status      *string    `json:"status"`
 	GroupID     *int64     `json:"group_id"`
+	ProjectID   *int64     `json:"project_id"`
 	StartTime   *time.Time `json:"start_time"`
 	Deadline    *time.Time `json:"deadline"`
 }

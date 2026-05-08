@@ -15,6 +15,7 @@ func (t *TaskHandler) CreateTag(ctx context.Context, req *taskv1.CreateTagReques
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user id from ctx", "operation", op, "error", err, "user_id", userID)
+		
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -28,6 +29,7 @@ func (t *TaskHandler) CreateTag(ctx context.Context, req *taskv1.CreateTagReques
 	createdTag, err := t.uc.CreateTag(ctx, tag)
 	if err != nil {
 		t.log.Error("Failed to create tag", "operation", op, "error", err, "user_id", userID)
+
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -48,12 +50,14 @@ func (t *TaskHandler) UpdateTag(ctx context.Context, req *taskv1.UpdateTagReques
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user id from ctx", "operation", op, "error", err)
+	
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	tag, err := t.uc.UpdateTag(ctx, req.GetId(), req.Name, req.Color, userID)
 	if err != nil {
 		t.log.Error("Failed to update tag", "operation", op, "error", err, "user_id", userID)
+	
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -73,12 +77,14 @@ func (t *TaskHandler) DeleteTag(ctx context.Context, req *taskv1.DeleteTagReques
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user id from ctx", "operation", op, "error", err)
+
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	err = t.uc.DeleteTag(ctx, req.GetId(), userID)
 	if err != nil {
 		t.log.Error("Failed to delete tag", "operation", op, "error", err, "user_id", userID)
+
 		return &taskv1.DeleteTagResponse{Success: false}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -91,12 +97,14 @@ func (t *TaskHandler) GetTag(ctx context.Context, req *taskv1.GetTagRequest) (*t
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user id from ctx", "operation", op, "error", err)
+	
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	task, err := t.uc.GetTag(ctx, req.GetId(), userID)
 	if err != nil {
 		t.log.Error("Failed to get tag", "operation", op, "error", err, "user_id", userID)
+
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -116,12 +124,14 @@ func (t *TaskHandler) GetTagList(ctx context.Context, req *taskv1.GetTagListRequ
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user id from ctx", "operation", op, "error", err)
+	
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	tags, err := t.uc.GetTagList(ctx, userID, req.GetLimit(), req.GetOffset())
 	if err != nil {
 		t.log.Error("Failed to get tags", "operation", op, "error", err, "user_id", userID)
+	
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -147,6 +157,7 @@ func (t *TaskHandler) GetTaskTags(ctx context.Context, req *taskv1.GetTaskTagsRe
 	tags, err := t.uc.GetTaskTags(ctx, req.GetTaskId())
 	if err != nil {
 		t.log.Error("Failed to get task tags", "op", op, "error", err)
+	
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -168,37 +179,61 @@ func (t *TaskHandler) GetTaskTags(ctx context.Context, req *taskv1.GetTaskTagsRe
 }
 
 func (t *TaskHandler) AddTagsToTask(ctx context.Context, req *taskv1.AddTagsToTaskRequest) (*taskv1.AddTagsToTaskResponse, error) {
-	const op = "grpc.AddTagToTask"
+	const op = "grpc.AddTagsToTask"
 
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user id from ctx", "operation", op, "error", err)
+
 		return &taskv1.AddTagsToTaskResponse{Succes: false}, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	err = t.uc.AddTagsToTask(ctx, req.GetTagsIds(), req.GetTaskId())
 	if err != nil {
 		t.log.Error("Failed to add tag to task", "operation", op, "error", err, "user_id", userID)
+	
 		return &taskv1.AddTagsToTaskResponse{Succes: false}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return &taskv1.AddTagsToTaskResponse{Succes: true}, nil
 }
 
-func (t *TaskHandler) RemoveTagFromTask(ctx context.Context, req *taskv1.RemoveTagsFromTaskRequest) (*taskv1.RemoveTagsFromTaskResponse, error) {
-	const op = "grpc.RemoveTagFromTask"
+func (t *TaskHandler) RemoveTagsFromTask(ctx context.Context, req *taskv1.RemoveTagsFromTaskRequest) (*taskv1.RemoveTagsFromTaskResponse, error) {
+	const op = "grpc.RemoveTagsFromTask"
 
 	userID, err := extractUserID(ctx)
 	if err != nil {
 		t.log.Error("Failed to extract user id from ctx", "operation", op, "error", err)
+	
 		return &taskv1.RemoveTagsFromTaskResponse{Success: false}, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	err = t.uc.RemoveTagsFromTask(ctx, req.GetTagsIds(), req.GetTaskId())
 	if err != nil {
 		t.log.Error("Failed to remove tag from task", "operation", op, "error", err, "user_id", userID)
+	
 		return &taskv1.RemoveTagsFromTaskResponse{Success: false}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return &taskv1.RemoveTagsFromTaskResponse{Success: true}, nil
+}
+
+func (t *TaskHandler) RemoveAllTagsFromTask(ctx context.Context, req *taskv1.RemoveAllTagsFromTaskRequest) (*taskv1.RemoveAllTagsFromTaskResponse, error) {
+	const op = "grpc.RemoveAllTagsFromTask"
+
+	_, err := extractUserID(ctx)
+	if err != nil {
+		t.log.Error("Failed to extract user id from ctx", "operation", op, "error", err)
+	
+		return &taskv1.RemoveAllTagsFromTaskResponse{Success: false}, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	err = t.uc.RemoveAllTagsFromTask(ctx, req.GetTaskId())
+	if err != nil {
+		t.log.Error("Failed to delete tags", "op", op, "error", err)
+
+		return &taskv1.RemoveAllTagsFromTaskResponse{Success: false}, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	return &taskv1.RemoveAllTagsFromTaskResponse{Success: true}, nil
 }
