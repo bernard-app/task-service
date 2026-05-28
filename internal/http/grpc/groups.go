@@ -2,7 +2,9 @@ package grpc
 
 import (
 	"bernard/internal/domain/entity"
+	"bernard/internal/usecase"
 	"context"
+	"errors"
 
 	taskv1 "github.com/bernard-app/bernard-protos/pkg/task_v1"
 	"google.golang.org/grpc/codes"
@@ -31,6 +33,10 @@ func (t *TaskHandler) CreateGroup(ctx context.Context, req *taskv1.CreateGroupRe
 
 	createdGroup, err := t.uc.CreateGroup(ctx, group)
 	if err != nil {
+		if errors.Is(err, usecase.ErrAlreadyExists) {
+			return nil, status.Error(codes.AlreadyExists, "group already exists")
+		}
+		
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
@@ -56,6 +62,10 @@ func (t *TaskHandler) UpdateGroup(ctx context.Context, req *taskv1.UpdateGroupRe
 
 	updatedGroup, err := t.uc.UpdateGroup(ctx, group, userID, req.GetId())
 	if err != nil {
+		if errors.Is(err, usecase.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "group not found")
+		}
+		
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
@@ -76,6 +86,10 @@ func (t *TaskHandler) DeleteGroup(ctx context.Context, req *taskv1.DeleteGroupRe
 
 	err = t.uc.DeleteGroup(ctx, req.GetId(), userID)
 	if err != nil {
+		if errors.Is(err, usecase.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "group not found")
+		}
+		
 		return &taskv1.DeleteGroupResponse{Success: false}, status.Error(codes.Internal, "internal server error")
 	}
 
@@ -102,6 +116,10 @@ func (t *TaskHandler) GetGroup(ctx context.Context, req *taskv1.GetGroupRequest)
 
 	group, err := t.uc.GetGroup(ctx, groupID, userID, limit, offset)
 	if err != nil {
+		if errors.Is(err, usecase.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "group not found")
+		}
+		
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
@@ -135,6 +153,10 @@ func (t *TaskHandler) GetProjectGroups(ctx context.Context, req *taskv1.GetProje
 
 	groups, err := t.uc.GetProjectGroups(ctx, projectID, userID, limit, offset)
 	if err != nil {
+		if errors.Is(err, usecase.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "group not found")
+		}
+		
 		return nil, status.Error(codes.Internal, "internals server error")
 	}
 

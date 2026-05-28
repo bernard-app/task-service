@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"bernard/internal/domain/entity"
+	"bernard/internal/usecase"
 	"context"
 	"errors"
 	"fmt"
@@ -40,8 +41,8 @@ func (s *Storage) CreateTask(ctx context.Context, task entity.Task) (*entity.Tas
 	if err != nil {
 		var pgErr *pgconn.PgError
 
-		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return nil, fmt.Errorf("%s: group or project does not exists", op)
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrAlreadyExists)
 		}
 
 		return nil, fmt.Errorf("%s: cannot scan row: %s", op, err.Error())
@@ -126,9 +127,7 @@ func (s *Storage) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			if pgErr.ConstraintName == "tasks_group_id_fkey" {
-				return nil, fmt.Errorf("%s: group does not exist", op)
-			}
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
 		}
 
 		return nil, fmt.Errorf("%s: cannot scan row: %s", op, err.Error())
@@ -159,7 +158,7 @@ func (s *Storage) DeleteTask(ctx context.Context, userID uuid.UUID, id int64) er
 
 	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
-		return fmt.Errorf("%s: task not found or access denied", op)
+		return fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
 	}
 
 	return nil
@@ -193,6 +192,12 @@ func (s *Storage) GetTask(ctx context.Context, id int64, userID uuid.UUID) (*ent
 		&task.GroupID, &task.ProjectID, &task.UserID, &task.CreatedAt, &task.UpdatedAt, &task.IsArchived,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+		}
+		
 		return nil, fmt.Errorf("%s: cannot query rows: %s", op, err.Error())
 	}
 
@@ -352,6 +357,12 @@ func (s *Storage) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.
 			&task.GroupID, &task.ProjectID, &task.UserID, &task.CreatedAt, &task.UpdatedAt, &task.IsArchived,
 		)
 		if err != nil {
+			var pgErr *pgconn.PgError
+
+			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+				return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			}
+			
 			return nil, fmt.Errorf("%s: cannot scan row: %w", op, err)
 		}
 
@@ -396,6 +407,12 @@ func (s *Storage) ArchiveTask(ctx context.Context, userID uuid.UUID, taskID int6
 	)
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+		}
+		
 		return nil, fmt.Errorf("%s: cannot exec query: %s", op, err.Error())
 	}
 

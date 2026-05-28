@@ -3,10 +3,16 @@ package usecase
 import (
 	"bernard/internal/domain/entity"
 	"context"
+	"errors"
 	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
+)
+
+var (
+	ErrAlreadyExists = errors.New("already exists")
+	ErrNotFound      = errors.New("not found")
 )
 
 type TxManager interface {
@@ -38,7 +44,7 @@ type Storage interface {
 	GetTaskTags(ctx context.Context, taskID int64) ([]*entity.Tag, error)
 	AddTagsToTask(ctx context.Context, tagsIDs []int64, taskID int64) error
 	RemoveTagsFromTask(ctx context.Context, tagsIDs []int64, taskID int64) error
-	RemoveAllTagsFromTask(ctx context.Context, taskID int64) error 
+	RemoveAllTagsFromTask(ctx context.Context, taskID int64) error
 
 	CreateProject(ctx context.Context, project entity.Project) (*entity.Project, error)
 	UpdateProject(ctx context.Context, project entity.UpdateProjectRequest, projectID int64, userID uuid.UUID) (*entity.Project, error)
@@ -57,17 +63,17 @@ type Redis interface {
 }
 
 type UseCase struct {
-	Log    *slog.Logger
-	DB     Storage
-	Tx     TxManager
+	Log   *slog.Logger
+	DB    Storage
+	Tx    TxManager
 	Redis Redis
 }
 
 func New(db Storage, log *slog.Logger, tx TxManager, redis Redis) *UseCase {
 	return &UseCase{
-		Log:    log,
-		DB:     db,
-		Tx:     tx,
+		Log:   log,
+		DB:    db,
+		Tx:    tx,
 		Redis: redis,
 	}
 }

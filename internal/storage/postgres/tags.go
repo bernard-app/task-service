@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"bernard/internal/domain/entity"
+	"bernard/internal/usecase"
 	"context"
 	"errors"
 	"fmt"
@@ -32,6 +33,12 @@ func (s *Storage) CreateTag(ctx context.Context, tag entity.Tag) (*entity.Tag, e
 
 	err = tx.QueryRow(ctx, query, args...).Scan(&createdTag.ID, &createdTag.Name, &createdTag.Color, &createdTag.UserID, &createdTag.ProjectID)
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrAlreadyExists)
+		}
+		
 		return nil, fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)
 	}
 
@@ -72,8 +79,8 @@ func (s *Storage) UpdateTag(ctx context.Context, tagID int64, name *string, colo
 	if err != nil {
 		var pgErr *pgconn.PgError
 
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, fmt.Errorf(`tag "%d" not found, err: %w, op: %s`, tagID, err, op)
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
 		}
 
 		return nil, fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)
@@ -136,8 +143,8 @@ func (s *Storage) GetTag(ctx context.Context, tagID int64, userID uuid.UUID) (*e
 	if err != nil {
 		var pgErr *pgconn.PgError
 
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, fmt.Errorf(`tag "%d" not found, err: %w, op: %s`, tagID, err, op)
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
 		}
 
 		return nil, fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)
@@ -178,6 +185,12 @@ func (s *Storage) GetTagList(ctx context.Context, userID uuid.UUID, limit, offse
 
 		err = rows.Scan(&tag.ID, &tag.Name, &tag.Color, &tag.UserID)
 		if err != nil {
+			var pgErr *pgconn.PgError
+
+			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+				return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			}
+
 			return nil, fmt.Errorf("cannot scan rows. op: %s, error: %w", op, err)
 		}
 
@@ -224,6 +237,12 @@ func (s *Storage) GetTaskTags(ctx context.Context, taskID int64) ([]*entity.Tag,
 
 		err = rows.Scan(&tag.ID, &tag.Name, &tag.Color, &tag.UserID, &tag.ProjectID)
 		if err != nil {
+			var pgErr *pgconn.PgError
+
+			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+				return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			}
+
 			return nil, fmt.Errorf("%s: cannot scan row: %w", op, err)
 		}
 
@@ -258,11 +277,11 @@ func (s *Storage) AddTagsToTask(ctx context.Context, tagsIDs []int64, taskID int
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return fmt.Errorf(`tag already exists, err: %w, op: %s`, err, op)
+			return fmt.Errorf("%s: %w", op, usecase.ErrAlreadyExists)
 		}
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return fmt.Errorf(`tag "or tasks "%d" does not exist, err: %w, op: %s`, taskID, err, op)
+			return fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
 		}
 
 		return fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"bernard/internal/domain/entity"
+	"bernard/internal/usecase"
 	"context"
 	"errors"
 	"fmt"
@@ -35,7 +36,7 @@ func (s *Storage) CreateProject(ctx context.Context, project entity.Project) (*e
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, fmt.Errorf("%s: project already exists", op)
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrAlreadyExists)
 		}
 
 		return nil, fmt.Errorf("%s: cannot create project: %s", op, err.Error())
@@ -81,6 +82,12 @@ func (s *Storage) UpdateProject(ctx context.Context, project entity.UpdateProjec
 
 	err = tx.QueryRow(ctx, query, args...).Scan(&updatedProject.ID, &updatedProject.Name, &updatedProject.Description, &updatedProject.UserID)
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+		}
+		
 		return nil, fmt.Errorf("%s: cannot update project: %s", op, err.Error())
 	}
 
@@ -130,6 +137,12 @@ func (s *Storage) GetProject(ctx context.Context, projectID int64, userID uuid.U
 	
 	err = tx.QueryRow(ctx, query, args...).Scan(&project.ID, &project.Name, &project.Description, &project.UserID)
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+		}
+		
 		return nil, fmt.Errorf("%s: cannot query row: %w", op, err)
 	}
 
@@ -168,6 +181,12 @@ func (s *Storage) GetProjects(ctx context.Context, userID uuid.UUID, limit, offs
 		
 		err:= rows.Scan(&project.ID, &project.Name, &project.Description, &project.UserID)
 		if err != nil {
+			var pgErr *pgconn.PgError
+
+			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+				return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			}
+			
 			return nil, fmt.Errorf("%s: cannot read project: %s", op, err.Error())
 		}
 
