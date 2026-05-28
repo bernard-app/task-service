@@ -10,15 +10,15 @@ import (
 )
 
 func (t *TaskHandler) CreateProject(ctx context.Context, req *taskv1.CreateProjectRequest) (*taskv1.CreateProjectResponse, error) {
-	const op = "grpc.CreateProject"
-
 	userID, err := extractUserID(ctx)
 	if err != nil {
-		t.log.Error("cannot extract userID from ctx", "op", op, "error", err)
-		
-		return nil, status.Error(codes.Unauthenticated, err.Error())
+		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 	}
 
+	if req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "name is required")
+	}
+	
 	project := entity.Project{
 		Name:        req.GetName(),
 		Description: req.Description,
@@ -27,9 +27,7 @@ func (t *TaskHandler) CreateProject(ctx context.Context, req *taskv1.CreateProje
 
 	createdProject, err := t.uc.CreateProject(ctx, project)
 	if err != nil {
-		t.log.Error("cannot create project", "op", op, "error", err)
-
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	return &taskv1.CreateProjectResponse{
@@ -43,13 +41,9 @@ func (t *TaskHandler) CreateProject(ctx context.Context, req *taskv1.CreateProje
 }
 
 func (t *TaskHandler) UpdateProject(ctx context.Context, req *taskv1.UpdateProjectRequest) (*taskv1.UpdateProjectResponse, error) {
-	const op = "grpc.UpdateProject"
-
 	userID, err := extractUserID(ctx)
 	if err != nil {
-		t.log.Error("cannot extract userID from ctx", "op", op, "error", err)
-
-		return nil, status.Error(codes.Unauthenticated, err.Error())
+		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 	}
 
 	project := entity.UpdateProjectRequest{
@@ -59,9 +53,7 @@ func (t *TaskHandler) UpdateProject(ctx context.Context, req *taskv1.UpdateProje
 
 	updatedProject, err := t.uc.UpdateProject(ctx, project, req.GetId(), userID)
 	if err != nil {
-		t.log.Error("cannot update project", "op", op, "error", err)
-
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	return &taskv1.UpdateProjectResponse{
@@ -75,40 +67,28 @@ func (t *TaskHandler) UpdateProject(ctx context.Context, req *taskv1.UpdateProje
 }
 
 func (t *TaskHandler) DeleteProject(ctx context.Context, req *taskv1.DeleteProjectRequest) (*taskv1.DeleteProjectResponse, error) {
-	const op = "grpc.DeleteProject"
-
 	userID, err := extractUserID(ctx)
 	if err != nil {
-		t.log.Error("cannot extract userID from ctx", "op", op, "error", err)
-	
-		return &taskv1.DeleteProjectResponse{Success: false}, status.Error(codes.Unauthenticated, err.Error())
+		return &taskv1.DeleteProjectResponse{Success: false}, status.Error(codes.Unauthenticated, "unauthenticated")
 	}
 
 	err = t.uc.DeleteProject(ctx, req.GetId(), userID)
 	if err != nil {
-		t.log.Error("cannot delete project", "op", op, "error", err)
-	
-		return &taskv1.DeleteProjectResponse{Success: false}, status.Error(codes.InvalidArgument, err.Error())
+		return &taskv1.DeleteProjectResponse{Success: false}, status.Error(codes.Internal, "internal server error")
 	}
 
 	return &taskv1.DeleteProjectResponse{Success: true}, nil
 }
 
 func (t *TaskHandler) GetProject(ctx context.Context, req *taskv1.GetProjectRequest) (*taskv1.GetProjectResponse, error) {
-	const op = "grpc.GetProject"
-
 	userID, err := extractUserID(ctx)
 	if err != nil {
-		t.log.Error("cannot extract userID from ctx", "op", op, "error", err)
-
-		return nil, status.Error(codes.Unauthenticated, err.Error())
+		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 	}
 
 	project, err := t.uc.GetProject(ctx, req.GetProjectId(), userID, req.GetLimit(), req.GetOffset())
 	if err != nil {
-		t.log.Error("cannot get project tree", "op", op, "error", err)
-	
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	var grpcGroups []*taskv1.Group
@@ -135,20 +115,14 @@ func (t *TaskHandler) GetProject(ctx context.Context, req *taskv1.GetProjectRequ
 }
 
 func (t *TaskHandler) GetProjects(ctx context.Context, req *taskv1.GetProjectsRequest) (*taskv1.GetProjectsResponse, error) {
-	const op = "grpc.GetProjects"
-
 	userID, err := extractUserID(ctx)
 	if err != nil {
-		t.log.Error("cannot extract userID from ctx", "op", op, "error", err)
-	
-		return nil, status.Error(codes.Unauthenticated, err.Error())
+		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 	}
 
 	projects, err := t.uc.GetProjects(ctx, userID, req.GetLimit(), req.GetOffset())
 	if err != nil {
-		t.log.Error("cannot get projects", "op", op, "error", err)
-	
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	var grpcProjects []*taskv1.Project
