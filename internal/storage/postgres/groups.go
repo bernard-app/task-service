@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"bernard/internal/domain/entity"
+	"bernard/internal/usecase"
 	"context"
 	"errors"
 	"fmt"
@@ -35,7 +36,7 @@ func (s *Storage) CreateGroup(ctx context.Context, group entity.Group) (*entity.
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, fmt.Errorf("project does not exists. op: %s, error: %w", op, err)
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrAlreadyExists)
 		}
 
 		return nil, fmt.Errorf("%s: cannot create group: %w", op, err)
@@ -84,9 +85,7 @@ func (s *Storage) UpdateGroup(ctx context.Context, group entity.UpdateGroupReque
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			if pgErr.ConstraintName == "groups_project_id_fkey" {
-				return nil, fmt.Errorf("%s: project does not exist", op)
-			}
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
 		}
 
 		return nil, fmt.Errorf("%s: cannot update group: %s", op, err.Error())
@@ -118,7 +117,7 @@ func (s *Storage) DeleteGroup(ctx context.Context, groupID int64, userID uuid.UU
 	rowsAffected := result.RowsAffected()
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("%s: group does not exist", op)
+		return fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
 	}
 
 	return nil
@@ -143,6 +142,12 @@ func (s *Storage) GetGroup(ctx context.Context, userID uuid.UUID, groupID int64)
 
 	err = tx.QueryRow(ctx, query, args...).Scan(&group.ID, &group.Name, &group.ProjectID)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+		}
+		
 		return nil, fmt.Errorf("%s: cannot get group: %w", op, err)
 	}
 
@@ -180,6 +185,12 @@ func (s *Storage) GetProjectGroups(ctx context.Context, userID uuid.UUID, projec
 
 		err = rows.Scan(&group.ID, &group.Name, &group.ProjectID)
 		if err != nil {
+			var pgErr *pgconn.PgError
+			
+			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+				return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			}
+			
 			return nil, fmt.Errorf("%s: cannot scan row: %w", op, err)
 		}
 

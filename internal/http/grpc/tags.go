@@ -2,7 +2,9 @@ package grpc
 
 import (
 	"bernard/internal/domain/entity"
+	"bernard/internal/usecase"
 	"context"
+	"errors"
 
 	taskv1 "github.com/bernard-app/bernard-protos/pkg/task_v1"
 	"google.golang.org/grpc/codes"
@@ -37,6 +39,10 @@ func (t *TaskHandler) CreateTag(ctx context.Context, req *taskv1.CreateTagReques
 
 	createdTag, err := t.uc.CreateTag(ctx, tag)
 	if err != nil {
+		if errors.Is(err, usecase.ErrAlreadyExists) {
+			return nil, status.Error(codes.AlreadyExists, "tag already exists")
+		}
+		
 		return nil, status.Error(codes.InvalidArgument, "internal server error")
 	}
 
@@ -59,6 +65,10 @@ func (t *TaskHandler) UpdateTag(ctx context.Context, req *taskv1.UpdateTagReques
 
 	tag, err := t.uc.UpdateTag(ctx, req.GetId(), req.Name, req.Color, userID)
 	if err != nil {
+		if errors.Is(err, usecase.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "tag not found")
+		}
+		
 		return nil, status.Error(codes.InvalidArgument, "internal server error")
 	}
 
@@ -94,6 +104,10 @@ func (t *TaskHandler) GetTag(ctx context.Context, req *taskv1.GetTagRequest) (*t
 
 	task, err := t.uc.GetTag(ctx, req.GetId(), userID)
 	if err != nil {
+		if errors.Is(err, usecase.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "tag not found")
+		}
+		
 		return nil, status.Error(codes.Internal, "interanl server error")
 	}
 
@@ -115,6 +129,10 @@ func (t *TaskHandler) GetTagList(ctx context.Context, req *taskv1.GetTagListRequ
 
 	tags, err := t.uc.GetTagList(ctx, userID, req.GetLimit(), req.GetOffset())
 	if err != nil {
+		if errors.Is(err, usecase.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "tag not found")
+		}
+		
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
@@ -137,6 +155,10 @@ func (t *TaskHandler) GetTagList(ctx context.Context, req *taskv1.GetTagListRequ
 func (t *TaskHandler) GetTaskTags(ctx context.Context, req *taskv1.GetTaskTagsRequest) (*taskv1.GetTaskTagsResponse, error) {
 	tags, err := t.uc.GetTaskTags(ctx, req.GetTaskId())
 	if err != nil {
+		if errors.Is(err, usecase.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "tag not found")
+		}
+		
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
@@ -165,6 +187,10 @@ func (t *TaskHandler) AddTagsToTask(ctx context.Context, req *taskv1.AddTagsToTa
 
 	err = t.uc.AddTagsToTask(ctx, req.GetTagsIds(), req.GetTaskId())
 	if err != nil {
+		if errors.Is(err, usecase.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "tag not found")
+		}
+		
 		return &taskv1.AddTagsToTaskResponse{Succes: false}, status.Error(codes.Internal, "internal server error")
 	}
 
@@ -179,6 +205,10 @@ func (t *TaskHandler) RemoveTagsFromTask(ctx context.Context, req *taskv1.Remove
 
 	err = t.uc.RemoveTagsFromTask(ctx, req.GetTagsIds(), req.GetTaskId())
 	if err != nil {
+		if errors.Is(err, usecase.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "tag not found")
+		}
+		
 		return &taskv1.RemoveTagsFromTaskResponse{Success: false}, status.Error(codes.Internal, "internal server error")
 	}
 
@@ -193,6 +223,10 @@ func (t *TaskHandler) RemoveAllTagsFromTask(ctx context.Context, req *taskv1.Rem
 
 	err = t.uc.RemoveAllTagsFromTask(ctx, req.GetTaskId())
 	if err != nil {
+		if errors.Is(err, usecase.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "tag not found")
+		}
+		
 		return &taskv1.RemoveAllTagsFromTaskResponse{Success: false}, status.Error(codes.Internal, "internal server error")
 	}
 
