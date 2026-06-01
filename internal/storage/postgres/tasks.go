@@ -10,6 +10,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -445,4 +446,34 @@ func (s *Storage) ArchiveOldTasks(ctx context.Context) (int64, error) {
 	rowsAffected := result.RowsAffected()
 
 	return rowsAffected, nil
+}
+
+func (s *Storage) CheckTaskOwnership(ctx context.Context, userID uuid.UUID, taskID int64) (bool, error) {
+	const op = "storage.CheckTaskOwnership"
+
+	tx := s.getEngine(ctx)
+	
+	query, args, err := sq.
+		Select("1").
+		From("tasks").
+		Where(sq.Eq{"id": taskID, "user_id": userID}).
+		Limit(1).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var dummy int
+	err = tx.QueryRow(ctx, query, args...).Scan(&dummy)
+	
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return true, nil
 }

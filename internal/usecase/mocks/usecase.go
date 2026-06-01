@@ -237,6 +237,294 @@ func (_c *MockStorage_ArchiveTask_Call) RunAndReturn(run func(ctx context.Contex
 	return _c
 }
 
+// CheckGroupOwnership provides a mock function for the type MockStorage
+func (_mock *MockStorage) CheckGroupOwnership(ctx context.Context, userID uuid.UUID, groupID int64) (bool, error) {
+	ret := _mock.Called(ctx, userID, groupID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CheckGroupOwnership")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) (bool, error)); ok {
+		return returnFunc(ctx, userID, groupID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) bool); ok {
+		r0 = returnFunc(ctx, userID, groupID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int64) error); ok {
+		r1 = returnFunc(ctx, userID, groupID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_CheckGroupOwnership_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CheckGroupOwnership'
+type MockStorage_CheckGroupOwnership_Call struct {
+	*mock.Call
+}
+
+// CheckGroupOwnership is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - groupID int64
+func (_e *MockStorage_Expecter) CheckGroupOwnership(ctx interface{}, userID interface{}, groupID interface{}) *MockStorage_CheckGroupOwnership_Call {
+	return &MockStorage_CheckGroupOwnership_Call{Call: _e.mock.On("CheckGroupOwnership", ctx, userID, groupID)}
+}
+
+func (_c *MockStorage_CheckGroupOwnership_Call) Run(run func(ctx context.Context, userID uuid.UUID, groupID int64)) *MockStorage_CheckGroupOwnership_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_CheckGroupOwnership_Call) Return(b bool, err error) *MockStorage_CheckGroupOwnership_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockStorage_CheckGroupOwnership_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, groupID int64) (bool, error)) *MockStorage_CheckGroupOwnership_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CheckProjectOwnership provides a mock function for the type MockStorage
+func (_mock *MockStorage) CheckProjectOwnership(ctx context.Context, userID uuid.UUID, projectID int64) (bool, error) {
+	ret := _mock.Called(ctx, userID, projectID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CheckProjectOwnership")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) (bool, error)); ok {
+		return returnFunc(ctx, userID, projectID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) bool); ok {
+		r0 = returnFunc(ctx, userID, projectID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int64) error); ok {
+		r1 = returnFunc(ctx, userID, projectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_CheckProjectOwnership_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CheckProjectOwnership'
+type MockStorage_CheckProjectOwnership_Call struct {
+	*mock.Call
+}
+
+// CheckProjectOwnership is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - projectID int64
+func (_e *MockStorage_Expecter) CheckProjectOwnership(ctx interface{}, userID interface{}, projectID interface{}) *MockStorage_CheckProjectOwnership_Call {
+	return &MockStorage_CheckProjectOwnership_Call{Call: _e.mock.On("CheckProjectOwnership", ctx, userID, projectID)}
+}
+
+func (_c *MockStorage_CheckProjectOwnership_Call) Run(run func(ctx context.Context, userID uuid.UUID, projectID int64)) *MockStorage_CheckProjectOwnership_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_CheckProjectOwnership_Call) Return(b bool, err error) *MockStorage_CheckProjectOwnership_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockStorage_CheckProjectOwnership_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, projectID int64) (bool, error)) *MockStorage_CheckProjectOwnership_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CheckTagOwnership provides a mock function for the type MockStorage
+func (_mock *MockStorage) CheckTagOwnership(ctx context.Context, userID uuid.UUID, tagID int64) (bool, error) {
+	ret := _mock.Called(ctx, userID, tagID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CheckTagOwnership")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) (bool, error)); ok {
+		return returnFunc(ctx, userID, tagID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) bool); ok {
+		r0 = returnFunc(ctx, userID, tagID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int64) error); ok {
+		r1 = returnFunc(ctx, userID, tagID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_CheckTagOwnership_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CheckTagOwnership'
+type MockStorage_CheckTagOwnership_Call struct {
+	*mock.Call
+}
+
+// CheckTagOwnership is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - tagID int64
+func (_e *MockStorage_Expecter) CheckTagOwnership(ctx interface{}, userID interface{}, tagID interface{}) *MockStorage_CheckTagOwnership_Call {
+	return &MockStorage_CheckTagOwnership_Call{Call: _e.mock.On("CheckTagOwnership", ctx, userID, tagID)}
+}
+
+func (_c *MockStorage_CheckTagOwnership_Call) Run(run func(ctx context.Context, userID uuid.UUID, tagID int64)) *MockStorage_CheckTagOwnership_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_CheckTagOwnership_Call) Return(b bool, err error) *MockStorage_CheckTagOwnership_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockStorage_CheckTagOwnership_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, tagID int64) (bool, error)) *MockStorage_CheckTagOwnership_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CheckTaskOwnership provides a mock function for the type MockStorage
+func (_mock *MockStorage) CheckTaskOwnership(ctx context.Context, userID uuid.UUID, taskID int64) (bool, error) {
+	ret := _mock.Called(ctx, userID, taskID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CheckTaskOwnership")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) (bool, error)); ok {
+		return returnFunc(ctx, userID, taskID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64) bool); ok {
+		r0 = returnFunc(ctx, userID, taskID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int64) error); ok {
+		r1 = returnFunc(ctx, userID, taskID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStorage_CheckTaskOwnership_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CheckTaskOwnership'
+type MockStorage_CheckTaskOwnership_Call struct {
+	*mock.Call
+}
+
+// CheckTaskOwnership is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - taskID int64
+func (_e *MockStorage_Expecter) CheckTaskOwnership(ctx interface{}, userID interface{}, taskID interface{}) *MockStorage_CheckTaskOwnership_Call {
+	return &MockStorage_CheckTaskOwnership_Call{Call: _e.mock.On("CheckTaskOwnership", ctx, userID, taskID)}
+}
+
+func (_c *MockStorage_CheckTaskOwnership_Call) Run(run func(ctx context.Context, userID uuid.UUID, taskID int64)) *MockStorage_CheckTaskOwnership_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStorage_CheckTaskOwnership_Call) Return(b bool, err error) *MockStorage_CheckTaskOwnership_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockStorage_CheckTaskOwnership_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, taskID int64) (bool, error)) *MockStorage_CheckTaskOwnership_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateGroup provides a mock function for the type MockStorage
 func (_mock *MockStorage) CreateGroup(ctx context.Context, group entity.Group) (*entity.Group, error) {
 	ret := _mock.Called(ctx, group)

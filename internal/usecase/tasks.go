@@ -11,6 +11,24 @@ import (
 func (u *UseCase) CreateTask(ctx context.Context, task entity.Task, tagsIDs []int64) (*entity.Task, error) {
 	const op = "usecase.CreateTask"
 
+	if task.ProjectID != nil {
+		ok, err := u.DB.CheckProjectOwnership(ctx, task.UserID, *task.ProjectID)
+		if !ok || err != nil {
+			u.Log.Warn("permission denied", "op", op, "error", err)
+
+			return nil, errors.New("permission denied")
+		}
+	}
+
+	if task.GroupID != nil {
+		ok, err := u.DB.CheckGroupOwnership(ctx, task.UserID, *task.GroupID)
+		if !ok || err != nil {
+			u.Log.Warn("permission denied", "op", op, "error", err)
+
+			return nil, errors.New("permission denied")
+		}
+	}
+	
 	var createdTask *entity.Task
 
 	err := u.Tx.ReadWrite(ctx, func(ctxTx context.Context) error {
@@ -48,6 +66,24 @@ func HasBaseUpdates(req entity.UpdateTaskRequest) bool {
 func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64) (*entity.Task, error) {
 	const op = "usecase.UpdateTask"
 
+	if task.ProjectID != nil {
+		ok, err := u.DB.CheckProjectOwnership(ctx, userID, *task.ProjectID)
+		if !ok || err != nil {
+			u.Log.Warn("permission denied", "op", op, "error", err)
+
+			return nil, errors.New("permission denied")
+		}
+	}
+
+	if task.GroupID != nil {
+		ok, err := u.DB.CheckGroupOwnership(ctx, userID, *task.GroupID)
+		if !ok || err != nil {
+			u.Log.Warn("permission denied", "op", op, "error", err)
+
+			return nil, errors.New("permission denied")
+		}
+	}
+	
 	updatedTask := &entity.Task{}
 
 	err := u.Tx.ReadWrite(ctx, func(ctxTx context.Context) error {
@@ -130,6 +166,13 @@ func (u *UseCase) GetTask(ctx context.Context, taskID int64, userID uuid.UUID) (
 func (u *UseCase) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.UUID, limit, offset uint64) ([]*entity.Task, error) {
 	const op = "usecase.GetGroupTasks"
 
+	ok, err := u.DB.CheckGroupOwnership(ctx, userID, groupID)
+	if !ok || err != nil {
+		u.Log.Warn("permission denied", "op", op, "error", err)
+
+		return nil, errors.New("permission denied")
+	}
+	
 	tasks, err := u.DB.GetGroupTasks(ctx, groupID, userID, limit, offset)
 	if err != nil {
 		u.Log.Error("error getting group tasks", "op", op, "error", err)

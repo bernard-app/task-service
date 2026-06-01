@@ -9,6 +9,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -331,4 +332,34 @@ func (s *Storage) RemoveAllTagsFromTask(ctx context.Context, taskID int64) error
 	}
 
 	return nil
+}
+
+func (s *Storage) CheckTagOwnership(ctx context.Context, userID uuid.UUID, tagID int64) (bool, error) {
+	const op = "storage.CheckTagOwnership"
+
+	tx := s.getEngine(ctx)
+	
+	query, args, err := sq.
+		Select("1").
+		From("tags").
+		Where(sq.Eq{"id": tagID, "user_id": userID}).
+		Limit(1).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var dummy int
+	err = tx.QueryRow(ctx, query, args...).Scan(&dummy)
+	
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return true, nil
 }

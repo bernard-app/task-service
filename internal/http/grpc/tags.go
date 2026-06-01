@@ -26,7 +26,7 @@ func (t *TaskHandler) CreateTag(ctx context.Context, req *taskv1.CreateTagReques
 		return nil, status.Error(codes.InvalidArgument, "color is required")
 	}
 
-	if req.ProjectId == 0 {
+	if req.GetProjectId() == 0 {
 		return nil, status.Error(codes.InvalidArgument, "project_id is required")
 	}
 	
@@ -153,7 +153,12 @@ func (t *TaskHandler) GetTagList(ctx context.Context, req *taskv1.GetTagListRequ
 }
 
 func (t *TaskHandler) GetTaskTags(ctx context.Context, req *taskv1.GetTaskTagsRequest) (*taskv1.GetTaskTagsResponse, error) {
-	tags, err := t.uc.GetTaskTags(ctx, req.GetTaskId())
+	userID, err := extractUserID(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
+	}
+	
+	tags, err := t.uc.GetTaskTags(ctx, userID, req.GetTaskId())
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, "tag not found")
@@ -180,12 +185,12 @@ func (t *TaskHandler) GetTaskTags(ctx context.Context, req *taskv1.GetTaskTagsRe
 }
 
 func (t *TaskHandler) AddTagsToTask(ctx context.Context, req *taskv1.AddTagsToTaskRequest) (*taskv1.AddTagsToTaskResponse, error) {
-	_, err := extractUserID(ctx)
+	userID, err := extractUserID(ctx)
 	if err != nil {
 		return &taskv1.AddTagsToTaskResponse{Succes: false}, status.Error(codes.Unauthenticated, "unauthenticated")
 	}
 
-	err = t.uc.AddTagsToTask(ctx, req.GetTagsIds(), req.GetTaskId())
+	err = t.uc.AddTagsToTask(ctx, userID, req.GetTagsIds(), req.GetTaskId())
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, "tag not found")
@@ -198,12 +203,12 @@ func (t *TaskHandler) AddTagsToTask(ctx context.Context, req *taskv1.AddTagsToTa
 }
 
 func (t *TaskHandler) RemoveTagsFromTask(ctx context.Context, req *taskv1.RemoveTagsFromTaskRequest) (*taskv1.RemoveTagsFromTaskResponse, error) {
-	_, err := extractUserID(ctx)
+	userID, err := extractUserID(ctx)
 	if err != nil {
 		return &taskv1.RemoveTagsFromTaskResponse{Success: false}, status.Error(codes.Unauthenticated, "unauthenticated")
 	}
 
-	err = t.uc.RemoveTagsFromTask(ctx, req.GetTagsIds(), req.GetTaskId())
+	err = t.uc.RemoveTagsFromTask(ctx, userID, req.GetTagsIds(), req.GetTaskId())
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, "tag not found")
@@ -216,12 +221,12 @@ func (t *TaskHandler) RemoveTagsFromTask(ctx context.Context, req *taskv1.Remove
 }
 
 func (t *TaskHandler) RemoveAllTagsFromTask(ctx context.Context, req *taskv1.RemoveAllTagsFromTaskRequest) (*taskv1.RemoveAllTagsFromTaskResponse, error) {
-	_, err := extractUserID(ctx)
+	userID, err := extractUserID(ctx)
 	if err != nil {
 		return &taskv1.RemoveAllTagsFromTaskResponse{Success: false}, status.Error(codes.Unauthenticated, "unauthenticated")
 	}
 
-	err = t.uc.RemoveAllTagsFromTask(ctx, req.GetTaskId())
+	err = t.uc.RemoveAllTagsFromTask(ctx, userID,  req.GetTaskId())
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, "tag not found")
