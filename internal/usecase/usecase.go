@@ -36,7 +36,7 @@ type Storage interface {
 	UpdateTag(ctx context.Context, tagID int64, name *string, color *string, userID uuid.UUID) (*entity.Tag, error)
 	DeleteTag(ctx context.Context, tagID int64, userID uuid.UUID) error
 	GetTag(ctx context.Context, tagID int64, userID uuid.UUID) (*entity.Tag, error)
-	GetTagList(ctx context.Context, userID uuid.UUID, limit, offset uint64) ([]*entity.Tag, error)
+	GetTagList(ctx context.Context, userID uuid.UUID, porjectIDE int64, limit, offset uint64) ([]*entity.Tag, error)
 	GetTaskTags(ctx context.Context, taskID int64) ([]*entity.Tag, error)
 	AddTagsToTask(ctx context.Context, tagsIDs []int64, taskID int64) error
 	RemoveTagsFromTask(ctx context.Context, tagsIDs []int64, taskID int64) error

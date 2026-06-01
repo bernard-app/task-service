@@ -106,12 +106,7 @@ func (t *TaskHandler) GetGroup(ctx context.Context, req *taskv1.GetGroupRequest)
 	}
 
 	return &taskv1.GetGroupResponse{
-		Group: &taskv1.Group{
-			Id:        group.ID,
-			Name:      group.Name,
-			TaskCount: int64(group.TaskCount),
-			ProjectId: group.ProjectID,
-		},
+		Group: mapGroup(group),
 	}, nil
 }
 

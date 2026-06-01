@@ -113,7 +113,7 @@ func (t *TaskHandler) GetTagList(ctx context.Context, req *taskv1.GetTagListRequ
 		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 	}
 
-	tags, err := t.uc.GetTagList(ctx, userID, req.GetLimit(), req.GetOffset())
+	tags, err := t.uc.GetTagList(ctx, userID, req.GetProjectId(), req.GetLimit(), req.GetOffset())
 	if err != nil {
 		return nil, HandleError(err)
 	}
@@ -126,6 +126,7 @@ func (t *TaskHandler) GetTagList(ctx context.Context, req *taskv1.GetTagListRequ
 			Name:   tag.Name,
 			Color:  tag.Color,
 			UserId: tag.UserID.String(),
+			ProjectId: tag.ProjectID,
 		})
 	}
 
