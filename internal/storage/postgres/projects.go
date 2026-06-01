@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"bernard/internal/domain/entity"
-	"bernard/internal/usecase"
+	"bernard/pkg/response"
 	"context"
 	"errors"
 	"fmt"
@@ -17,7 +17,7 @@ func (s *Storage) CreateProject(ctx context.Context, project entity.Project) (*e
 	const op = "storage.CreateProject"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Insert("projects").
 		Columns("name", "description", "user_id").
@@ -27,7 +27,7 @@ func (s *Storage) CreateProject(ctx context.Context, project entity.Project) (*e
 		ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	var createdProject entity.Project
@@ -37,10 +37,10 @@ func (s *Storage) CreateProject(ctx context.Context, project entity.Project) (*e
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, fmt.Errorf("%s: %w", op, usecase.ErrAlreadyExists)
+			return nil, fmt.Errorf("%s: %w", op, response.ErrAlreadyExists)
 		}
 
-		return nil, fmt.Errorf("%s: cannot create project: %s", op, err.Error())
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return &createdProject, nil
@@ -50,7 +50,7 @@ func (s *Storage) UpdateProject(ctx context.Context, project entity.UpdateProjec
 	const op = "storage.UpdateProject"
 
 	tx := s.getEngine(ctx)
-	
+
 	builder := sq.
 		Update("projects").
 		Where(sq.Eq{"id": projectID, "user_id": userID})
@@ -86,9 +86,9 @@ func (s *Storage) UpdateProject(ctx context.Context, project entity.UpdateProjec
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			return nil, fmt.Errorf("%s: %w", op, response.ErrNotFound)
 		}
-		
+
 		return nil, fmt.Errorf("%s: cannot update project: %s", op, err.Error())
 	}
 
@@ -99,7 +99,7 @@ func (s *Storage) DeleteProject(ctx context.Context, projectID int64, userID uui
 	const op = "storage.DeleteProject"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Delete("projects").
 		Where(sq.Eq{"id": projectID, "user_id": userID}).
@@ -122,9 +122,9 @@ func (s *Storage) GetProject(ctx context.Context, projectID int64, userID uuid.U
 	const op = "storage.GetProject"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
-		Select("id", "name", "description", "user_id",).
+		Select("id", "name", "description", "user_id").
 		From("projects").
 		Where(sq.Eq{"id": projectID, "user_id": userID}).
 		PlaceholderFormat(sq.Dollar).
@@ -135,15 +135,15 @@ func (s *Storage) GetProject(ctx context.Context, projectID int64, userID uuid.U
 	}
 
 	var project entity.Project
-	
+
 	err = tx.QueryRow(ctx, query, args...).Scan(&project.ID, &project.Name, &project.Description, &project.UserID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			return nil, fmt.Errorf("%s: %w", op, response.ErrNotFound)
 		}
-		
+
 		return nil, fmt.Errorf("%s: cannot query row: %w", op, err)
 	}
 
@@ -154,7 +154,7 @@ func (s *Storage) GetProjects(ctx context.Context, userID uuid.UUID, limit, offs
 	const op = "storage.GetProjects"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Select("id", "name", "description", "user_id").
 		From("projects").
@@ -179,15 +179,15 @@ func (s *Storage) GetProjects(ctx context.Context, userID uuid.UUID, limit, offs
 
 	for rows.Next() {
 		var project entity.Project
-		
-		err:= rows.Scan(&project.ID, &project.Name, &project.Description, &project.UserID)
+
+		err := rows.Scan(&project.ID, &project.Name, &project.Description, &project.UserID)
 		if err != nil {
 			var pgErr *pgconn.PgError
 
 			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-				return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+				return nil, fmt.Errorf("%s: %w", op, response.ErrNotFound)
 			}
-			
+
 			return nil, fmt.Errorf("%s: cannot read project: %s", op, err.Error())
 		}
 
@@ -201,7 +201,7 @@ func (s *Storage) CheckProjectOwnership(ctx context.Context, userID uuid.UUID, p
 	const op = "storage.CheckProjectOwnership"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Select("1").
 		From("projects").
@@ -215,12 +215,12 @@ func (s *Storage) CheckProjectOwnership(ctx context.Context, userID uuid.UUID, p
 
 	var dummy int
 	err = tx.QueryRow(ctx, query, args...).Scan(&dummy)
-	
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
-		
+
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 

@@ -45,7 +45,7 @@ func (t *TaskHandler) CreateTask(ctx context.Context, req *taskv1.CreateTaskRequ
 
 	createdTask, err := t.uc.CreateTask(ctx, task, req.GetTagIds())
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid argument")
+		return nil, HandleError(err)
 	}
 
 	return &taskv1.CreateTaskResponse{
@@ -97,7 +97,7 @@ func (t *TaskHandler) UpdateTask(ctx context.Context, req *taskv1.UpdateTaskRequ
 
 	updatedTask, err := t.uc.UpdateTask(ctx, task, userID, taskID)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid argument")
+		return nil, HandleError(err)
 	}
 
 	return &taskv1.UpdateTaskResponse{
@@ -115,7 +115,7 @@ func (t *TaskHandler) DeleteTask(ctx context.Context, req *taskv1.DeleteTaskRequ
 
 	err = t.uc.DeleteTask(ctx, userID, taskID)
 	if err != nil {
-		return &taskv1.DeleteTaskResponse{Success: false}, status.Error(codes.InvalidArgument, "invalid argument")
+		return &taskv1.DeleteTaskResponse{Success: false}, HandleError(err)
 	}
 
 	return &taskv1.DeleteTaskResponse{
@@ -133,7 +133,7 @@ func (t *TaskHandler) GetTask(ctx context.Context, req *taskv1.GetTaskRequest) (
 
 	task, err := t.uc.GetTask(ctx, taskID, userID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "internal server error")
+		return nil, HandleError(err)
 	}
 
 	return &taskv1.GetTaskResponse{
@@ -173,7 +173,7 @@ func (t *TaskHandler) GetListTask(ctx context.Context, req *taskv1.GetListTaskRe
 
 	tasks, err := t.uc.GetListTask(ctx, taskFilter)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "internal server error")
+		return nil, HandleError(err)
 	}
 
 	tasksResponse := make([]*taskv1.Task, 0, len(tasks))
@@ -194,7 +194,7 @@ func (t *TaskHandler) GetGroupTasks(ctx context.Context, req *taskv1.GetGroupTas
 
 	tasks, err := t.uc.GetGroupTasks(ctx, req.GetGroupId(), userID, req.GetLimit(), req.GetOffset())
 	if err != nil {
-		return nil, status.Error(codes.Internal, "internal server error")
+		return nil, HandleError(err)
 	}
 
 	var grpcTasks []*taskv1.Task
@@ -218,7 +218,7 @@ func (t *TaskHandler) ArchiveTask(ctx context.Context, req *taskv1.ArchiveTaskRe
 
 	task, err := t.uc.ArchiveTask(ctx, userID, taskID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "internal server error")
+		return nil, HandleError(err)
 	}
 
 	return &taskv1.ArchiveTaskResponse{

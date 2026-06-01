@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"bernard/internal/domain/entity"
-	"bernard/internal/usecase"
+	"bernard/pkg/response"
 	"context"
 	"errors"
 	"fmt"
@@ -27,7 +27,7 @@ func (s *Storage) CreateGroup(ctx context.Context, group entity.Group) (*entity.
 		ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("cannot build query. op: %s, error: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	var createdGroup entity.Group
@@ -37,10 +37,10 @@ func (s *Storage) CreateGroup(ctx context.Context, group entity.Group) (*entity.
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, fmt.Errorf("%s: %w", op, usecase.ErrAlreadyExists)
+			return nil, fmt.Errorf("%s: %w", op, response.ErrAlreadyExists)
 		}
 
-		return nil, fmt.Errorf("%s: cannot create group: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return &createdGroup, nil
@@ -75,7 +75,7 @@ func (s *Storage) UpdateGroup(ctx context.Context, group entity.UpdateGroupReque
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("%s: cannot build query: %s", op, err.Error())
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	var UpdatedGroup entity.Group
@@ -86,10 +86,10 @@ func (s *Storage) UpdateGroup(ctx context.Context, group entity.UpdateGroupReque
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			return nil, fmt.Errorf("%s: %w", op, response.ErrNotFound)
 		}
 
-		return nil, fmt.Errorf("%s: cannot update group: %s", op, err.Error())
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return &UpdatedGroup, nil
@@ -118,7 +118,7 @@ func (s *Storage) DeleteGroup(ctx context.Context, groupID int64, userID uuid.UU
 	rowsAffected := result.RowsAffected()
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+		return response.ErrNotFound
 	}
 
 	return nil
@@ -136,7 +136,7 @@ func (s *Storage) GetGroup(ctx context.Context, userID uuid.UUID, groupID int64)
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("error building query: %w. op: %s", err, op)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	var group entity.Group
@@ -144,12 +144,12 @@ func (s *Storage) GetGroup(ctx context.Context, userID uuid.UUID, groupID int64)
 	err = tx.QueryRow(ctx, query, args...).Scan(&group.ID, &group.Name, &group.ProjectID)
 	if err != nil {
 		var pgErr *pgconn.PgError
-		
+
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			return nil, fmt.Errorf("%s: %w", op, response.ErrNotFound)
 		}
-		
-		return nil, fmt.Errorf("%s: cannot get group: %w", op, err)
+
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return &group, nil
@@ -169,14 +169,14 @@ func (s *Storage) GetProjectGroups(ctx context.Context, userID uuid.UUID, projec
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("%s: cannot build query: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	var groups []*entity.Group
 
 	rows, err := tx.Query(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("%s: cannot query row: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	defer rows.Close()
@@ -187,12 +187,12 @@ func (s *Storage) GetProjectGroups(ctx context.Context, userID uuid.UUID, projec
 		err = rows.Scan(&group.ID, &group.Name, &group.ProjectID)
 		if err != nil {
 			var pgErr *pgconn.PgError
-			
+
 			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-				return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+				return nil, fmt.Errorf("%s: %w", op, response.ErrNotFound)
 			}
-			
-			return nil, fmt.Errorf("%s: cannot scan row: %w", op, err)
+
+			return nil, fmt.Errorf("%s: %w", op, err)
 		}
 
 		groups = append(groups, &group)
@@ -205,7 +205,7 @@ func (s *Storage) CheckGroupOwnership(ctx context.Context, userID uuid.UUID, gro
 	const op = "storage.CheckGroupOwnership"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Select("1").
 		From("groups").
@@ -219,12 +219,12 @@ func (s *Storage) CheckGroupOwnership(ctx context.Context, userID uuid.UUID, gro
 
 	var dummy int
 	err = tx.QueryRow(ctx, query, args...).Scan(&dummy)
-	
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
-		
+
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 

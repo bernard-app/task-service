@@ -2,8 +2,8 @@ package usecase
 
 import (
 	"bernard/internal/domain/entity"
+	"bernard/pkg/response"
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 )
@@ -16,7 +16,7 @@ func (u *UseCase) CreateTask(ctx context.Context, task entity.Task, tagsIDs []in
 		if !ok || err != nil {
 			u.Log.Warn("permission denied", "op", op, "error", err)
 
-			return nil, errors.New("permission denied")
+			return nil,	response.ErrPermissionDenied
 		}
 	}
 
@@ -25,7 +25,7 @@ func (u *UseCase) CreateTask(ctx context.Context, task entity.Task, tagsIDs []in
 		if !ok || err != nil {
 			u.Log.Warn("permission denied", "op", op, "error", err)
 
-			return nil, errors.New("permission denied")
+			return nil, response.ErrPermissionDenied
 		}
 	}
 	
@@ -71,7 +71,7 @@ func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 		if !ok || err != nil {
 			u.Log.Warn("permission denied", "op", op, "error", err)
 
-			return nil, errors.New("permission denied")
+			return nil, response.ErrPermissionDenied
 		}
 	}
 
@@ -80,7 +80,7 @@ func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 		if !ok || err != nil {
 			u.Log.Warn("permission denied", "op", op, "error", err)
 
-			return nil, errors.New("permission denied")
+			return nil, response.ErrPermissionDenied
 		}
 	}
 	
@@ -112,6 +112,7 @@ func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 				return err
 			}
 		}
+		
 		return nil
 	})
 	if err != nil {
@@ -170,7 +171,7 @@ func (u *UseCase) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.
 	if !ok || err != nil {
 		u.Log.Warn("permission denied", "op", op, "error", err)
 
-		return nil, errors.New("permission denied")
+		return nil, response.ErrPermissionDenied
 	}
 	
 	tasks, err := u.DB.GetGroupTasks(ctx, groupID, userID, limit, offset)
@@ -188,6 +189,7 @@ func (u *UseCase) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.
 			return nil, err
 		}
 	}
+	
 	return tasks, nil
 }
 
@@ -200,21 +202,25 @@ func (u *UseCase) GetListTask(ctx context.Context, taskFilter entity.TasksFilter
 	if taskFilter.UserID == uuid.Nil {
 		u.Log.Error("invalid userID", "op", op)
 
-		return nil, errors.New("invalid userID")
+		return nil, response.ErrInvalidArgument
 	}
 
+	taskFilter.FilterType = entity.None
+	
 	if taskFilter.Priority != nil {
 		taskFilter.FilterType = entity.PriorityFilter
-	} else if taskFilter.Tag != nil {
+	} 
+
+	if taskFilter.Tag != nil {
 		taskFilter.FilterType = entity.TagFilter
-	} else if taskFilter.From != nil {
+	} 
+
+	if taskFilter.From != nil {
 		if taskFilter.To != nil {
 			taskFilter.FilterType = entity.DateFilter
 		} else {
-			return nil, errors.New("invalid data")
+			return nil, response.ErrInvalidArgument
 		}
-	} else {
-		taskFilter.FilterType = entity.None
 	}
 
 	switch taskFilter.FilterType {

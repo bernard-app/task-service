@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func LoggingInterceptor(ctx context.Context, log *slog.Logger, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func LoggingInterceptor(ctx context.Context, log *slog.Logger, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	start := time.Now()
 
 	log = log.With(slog.String("component", "middleware/logger"))

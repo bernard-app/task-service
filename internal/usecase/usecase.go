@@ -3,16 +3,10 @@ package usecase
 import (
 	"bernard/internal/domain/entity"
 	"context"
-	"errors"
 	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
-)
-
-var (
-	ErrAlreadyExists = errors.New("already exists")
-	ErrNotFound      = errors.New("not found")
 )
 
 type TxManager interface {
