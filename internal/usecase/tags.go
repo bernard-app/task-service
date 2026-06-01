@@ -5,6 +5,7 @@ import (
 	"bernard/pkg/response"
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -30,6 +31,12 @@ func (u *UseCase) CreateTag(ctx context.Context, tag entity.Tag) (*entity.Tag, e
 func (u *UseCase) UpdateTag(ctx context.Context, tagID int64, tagName, tagColor *string, userID uuid.UUID) (*entity.Tag, error) {
 	const op = "usecase.UpdateTag"
 
+	if tagColor != nil {
+		if !strings.HasPrefix(*tagColor, "#") || len(*tagColor) != 7 {
+			return nil, response.ErrInvalidArgument
+		}
+	}
+	
 	updatedTag, err := u.DB.UpdateTag(ctx, tagID, tagName, tagColor, userID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -60,10 +67,10 @@ func (u *UseCase) GetTag(ctx context.Context, tagID int64, userID uuid.UUID) (*e
 	return tag, nil
 }
 
-func (u *UseCase) GetTagList(ctx context.Context, userID uuid.UUID, limit, offset uint64) ([]*entity.Tag, error) {
+func (u *UseCase) GetTagList(ctx context.Context, userID uuid.UUID, projectID int64, limit, offset uint64) ([]*entity.Tag, error) {
 	const op = "usecase.GetTagList"
 
-	tags, err := u.DB.GetTagList(ctx, userID, limit, offset)
+	tags, err := u.DB.GetTagList(ctx, userID, projectID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

@@ -1524,8 +1524,8 @@ func (_c *MockStorage_GetTag_Call) RunAndReturn(run func(ctx context.Context, ta
 }
 
 // GetTagList provides a mock function for the type MockStorage
-func (_mock *MockStorage) GetTagList(ctx context.Context, userID uuid.UUID, limit uint64, offset uint64) ([]*entity.Tag, error) {
-	ret := _mock.Called(ctx, userID, limit, offset)
+func (_mock *MockStorage) GetTagList(ctx context.Context, userID uuid.UUID, porjectIDE int64, limit uint64, offset uint64) ([]*entity.Tag, error) {
+	ret := _mock.Called(ctx, userID, porjectIDE, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTagList")
@@ -1533,18 +1533,18 @@ func (_mock *MockStorage) GetTagList(ctx context.Context, userID uuid.UUID, limi
 
 	var r0 []*entity.Tag
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uint64, uint64) ([]*entity.Tag, error)); ok {
-		return returnFunc(ctx, userID, limit, offset)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64, uint64, uint64) ([]*entity.Tag, error)); ok {
+		return returnFunc(ctx, userID, porjectIDE, limit, offset)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uint64, uint64) []*entity.Tag); ok {
-		r0 = returnFunc(ctx, userID, limit, offset)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int64, uint64, uint64) []*entity.Tag); ok {
+		r0 = returnFunc(ctx, userID, porjectIDE, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*entity.Tag)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uint64, uint64) error); ok {
-		r1 = returnFunc(ctx, userID, limit, offset)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int64, uint64, uint64) error); ok {
+		r1 = returnFunc(ctx, userID, porjectIDE, limit, offset)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1559,13 +1559,14 @@ type MockStorage_GetTagList_Call struct {
 // GetTagList is a helper method to define mock.On call
 //   - ctx context.Context
 //   - userID uuid.UUID
+//   - porjectIDE int64
 //   - limit uint64
 //   - offset uint64
-func (_e *MockStorage_Expecter) GetTagList(ctx interface{}, userID interface{}, limit interface{}, offset interface{}) *MockStorage_GetTagList_Call {
-	return &MockStorage_GetTagList_Call{Call: _e.mock.On("GetTagList", ctx, userID, limit, offset)}
+func (_e *MockStorage_Expecter) GetTagList(ctx interface{}, userID interface{}, porjectIDE interface{}, limit interface{}, offset interface{}) *MockStorage_GetTagList_Call {
+	return &MockStorage_GetTagList_Call{Call: _e.mock.On("GetTagList", ctx, userID, porjectIDE, limit, offset)}
 }
 
-func (_c *MockStorage_GetTagList_Call) Run(run func(ctx context.Context, userID uuid.UUID, limit uint64, offset uint64)) *MockStorage_GetTagList_Call {
+func (_c *MockStorage_GetTagList_Call) Run(run func(ctx context.Context, userID uuid.UUID, porjectIDE int64, limit uint64, offset uint64)) *MockStorage_GetTagList_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -1575,19 +1576,24 @@ func (_c *MockStorage_GetTagList_Call) Run(run func(ctx context.Context, userID 
 		if args[1] != nil {
 			arg1 = args[1].(uuid.UUID)
 		}
-		var arg2 uint64
+		var arg2 int64
 		if args[2] != nil {
-			arg2 = args[2].(uint64)
+			arg2 = args[2].(int64)
 		}
 		var arg3 uint64
 		if args[3] != nil {
 			arg3 = args[3].(uint64)
+		}
+		var arg4 uint64
+		if args[4] != nil {
+			arg4 = args[4].(uint64)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
+			arg4,
 		)
 	})
 	return _c
@@ -1598,7 +1604,7 @@ func (_c *MockStorage_GetTagList_Call) Return(tags []*entity.Tag, err error) *Mo
 	return _c
 }
 
-func (_c *MockStorage_GetTagList_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, limit uint64, offset uint64) ([]*entity.Tag, error)) *MockStorage_GetTagList_Call {
+func (_c *MockStorage_GetTagList_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, porjectIDE int64, limit uint64, offset uint64) ([]*entity.Tag, error)) *MockStorage_GetTagList_Call {
 	_c.Call.Return(run)
 	return _c
 }

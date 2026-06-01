@@ -91,26 +91,8 @@ func (t *TaskHandler) GetProject(ctx context.Context, req *taskv1.GetProjectRequ
 		return nil, HandleError(err)
 	}
 
-	var grpcGroups []*taskv1.Group
-
-	for _, group := range project.Groups {
-		grpcGroups = append(grpcGroups, mapGroup(group))
-	}
-
-	grpcProject := &taskv1.Project{
-		Id:        project.ID,
-		Name:      project.Name,
-		UserId:    userID.String(),
-		TaskCount: int64(project.TaskCount),
-		Groups:    grpcGroups,
-	}
-
-	if project.Description != nil {
-		grpcProject.Description = project.Description
-	}
-
 	return &taskv1.GetProjectResponse{
-		Project: grpcProject,
+		Project: mapProject(project),
 	}, nil
 }
 

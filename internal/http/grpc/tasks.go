@@ -63,6 +63,10 @@ func (t *TaskHandler) UpdateTask(ctx context.Context, req *taskv1.UpdateTaskRequ
 
 	taskID := req.GetTaskId()
 
+	if req.Name != nil {
+		task.Name = req.Name
+	}
+	
 	if req.Description != nil {
 		task.Description = req.Description
 	}

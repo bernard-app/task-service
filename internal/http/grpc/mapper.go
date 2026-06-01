@@ -17,7 +17,7 @@ func mapTask(t *entity.Task) *taskv1.Task {
 
 	for _, tag := range t.Tags {
 		grpcTags = append(grpcTags, &taskv1.Tag{
-			Id:    tag.ID,
+			Id:     tag.ID,
 			Name:   tag.Name,
 			Color:  tag.Color,
 			UserId: tag.UserID.String(),
@@ -68,10 +68,31 @@ func mapGroup(t *entity.Group) *taskv1.Group {
 	}
 
 	return &taskv1.Group{
-		Id: t.ID,
-		Name: t.Name,
-		Tasks: grpcTasks,
+		Id:        t.ID,
+		Name:      t.Name,
+		Tasks:     grpcTasks,
 		TaskCount: int64(t.TaskCount),
 		ProjectId: t.ProjectID,
+	}
+}
+
+func mapProject(t *entity.Project) *taskv1.Project {
+	if t == nil {
+		return nil
+	}
+
+	grpcGroups := make([]*taskv1.Group, 0, len(t.Groups))
+
+	for _, group := range t.Groups {
+		grpcGroups = append(grpcGroups, mapGroup(group))
+	}
+
+	return &taskv1.Project{
+		Id:          t.ID,
+		Name:        t.Name,
+		Description: t.Description,
+		Groups:      grpcGroups,
+		TaskCount:   int64(t.TaskCount),
+		UserId:      t.UserID.String(),
 	}
 }

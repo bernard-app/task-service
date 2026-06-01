@@ -14,7 +14,7 @@ func (u *UseCase) CreateProject(ctx context.Context, project entity.Project) (*e
 	createdProject, err := u.DB.CreateProject(ctx, project)
 	if err != nil {
 		u.Log.Error("error creating project", "op", op, "error", err)
-		
+
 		return nil, err
 	}
 
@@ -22,7 +22,7 @@ func (u *UseCase) CreateProject(ctx context.Context, project entity.Project) (*e
 	if err != nil {
 		u.Log.Error("error invalidating cache", "op", op, "error", err)
 	}
-	
+
 	return createdProject, nil
 }
 
@@ -32,15 +32,15 @@ func (u *UseCase) UpdateProject(ctx context.Context, project entity.UpdateProjec
 	updatedProject, err := u.DB.UpdateProject(ctx, project, projectID, userID)
 	if err != nil {
 		u.Log.Error("error updating project", "op", op, "error", err)
-		
+
 		return nil, err
 	}
-	
+
 	err = u.Redis.InvalidateProjectCache(ctx, userID, projectID)
 	if err != nil {
 		u.Log.Error("error invalidating cache", "op", op, "error", err)
 	}
-	
+
 	return updatedProject, nil
 }
 
@@ -49,51 +49,50 @@ func (u *UseCase) DeleteProject(ctx context.Context, projectID int64, userID uui
 
 	if projectID <= 0 {
 		u.Log.Error("invalid projectID", "op", op, "projectID", projectID)
-		
+
 		return response.ErrInvalidArgument
 	}
 
 	err := u.DB.DeleteProject(ctx, projectID, userID)
 	if err != nil {
 		u.Log.Error("error deleting project", "op", op, "error", err)
-		
+
 		return err
 	}
-	
+
 	err = u.Redis.InvalidateProjectCache(ctx, userID, projectID)
 	if err != nil {
 		u.Log.Error("error invalidating cache", "op", op, "error", err)
 	}
-	
+
 	return nil
 }
 
 func (u *UseCase) GetProject(ctx context.Context, projectID int64, userID uuid.UUID, limit, offset uint64) (*entity.Project, error) {
 	const op = "storage.GetProject"
 
-	isCache := true
+	//isCache := true
 
-	project, err := u.Redis.GetTempProject(ctx, userID, projectID)
-	if err != nil {
-		u.Log.Error(err.Error())
-		isCache = false
-	}
+	//cachedProject, err := u.Redis.GetTempProject(ctx, userID, projectID)
+	//if err != nil {
+	//	isCache = false
+	//}
 
-	if isCache {
-		return project, nil
-	}
-	
-	project, err = u.DB.GetProject(ctx, projectID, userID)
+	//if isCache {
+	//	return cachedProject, nil
+	//}
+
+	project, err := u.DB.GetProject(ctx, projectID, userID)
 	if err != nil {
 		u.Log.Error("error getting project", "op", op, "error", err)
-		
+
 		return nil, err
 	}
 
 	project.Groups, err = u.GetProjectGroups(ctx, projectID, userID, limit, offset)
 	if err != nil {
 		u.Log.Error("error getting projet groups", "op", op, "error", err)
-		
+
 		return nil, err
 	}
 
@@ -115,7 +114,7 @@ func (u *UseCase) GetProjects(ctx context.Context, userID uuid.UUID, limit, offs
 	projects, err := u.DB.GetProjects(ctx, userID, limit, offset)
 	if err != nil {
 		u.Log.Error("error getting projects", "op", op, "error", err)
-		
+
 		return nil, err
 	}
 

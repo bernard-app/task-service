@@ -154,7 +154,7 @@ func (s *Storage) GetTag(ctx context.Context, tagID int64, userID uuid.UUID) (*e
 	return &tag, nil
 }
 
-func (s *Storage) GetTagList(ctx context.Context, userID uuid.UUID, limit, offset uint64) ([]*entity.Tag, error) {
+func (s *Storage) GetTagList(ctx context.Context, userID uuid.UUID, projectID int64, limit, offset uint64) ([]*entity.Tag, error) {
 	const op = "storage.GetTagList"
 
 	tx := s.getEngine(ctx)
@@ -162,7 +162,7 @@ func (s *Storage) GetTagList(ctx context.Context, userID uuid.UUID, limit, offse
 	query, args, err := sq.
 		Select("id", "name", "color", "user_id").
 		From("tags").
-		Where(sq.Eq{"user_id": userID}).
+		Where(sq.Eq{"user_id": userID, "project_id": projectID}).
 		Limit(limit).
 		Offset(offset).
 		PlaceholderFormat(sq.Dollar).

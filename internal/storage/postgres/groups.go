@@ -160,6 +160,8 @@ func (s *Storage) GetProjectGroups(ctx context.Context, userID uuid.UUID, projec
 
 	tx := s.getEngine(ctx)
 
+	fmt.Println(userID, projectID, limit, offset)
+
 	query, args, err := sq.
 		Select("id", "name", "project_id").
 		From("groups").
