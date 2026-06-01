@@ -2,8 +2,8 @@ package usecase
 
 import (
 	"bernard/internal/domain/entity"
+	"bernard/pkg/response"
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 )
@@ -14,6 +14,7 @@ func (u *UseCase) CreateProject(ctx context.Context, project entity.Project) (*e
 	createdProject, err := u.DB.CreateProject(ctx, project)
 	if err != nil {
 		u.Log.Error("error creating project", "op", op, "error", err)
+		
 		return nil, err
 	}
 
@@ -31,6 +32,7 @@ func (u *UseCase) UpdateProject(ctx context.Context, project entity.UpdateProjec
 	updatedProject, err := u.DB.UpdateProject(ctx, project, projectID, userID)
 	if err != nil {
 		u.Log.Error("error updating project", "op", op, "error", err)
+		
 		return nil, err
 	}
 	
@@ -47,12 +49,14 @@ func (u *UseCase) DeleteProject(ctx context.Context, projectID int64, userID uui
 
 	if projectID <= 0 {
 		u.Log.Error("invalid projectID", "op", op, "projectID", projectID)
-		return errors.New("invalid project id")
+		
+		return response.ErrInvalidArgument
 	}
 
 	err := u.DB.DeleteProject(ctx, projectID, userID)
 	if err != nil {
 		u.Log.Error("error deleting project", "op", op, "error", err)
+		
 		return err
 	}
 	
@@ -82,12 +86,14 @@ func (u *UseCase) GetProject(ctx context.Context, projectID int64, userID uuid.U
 	project, err = u.DB.GetProject(ctx, projectID, userID)
 	if err != nil {
 		u.Log.Error("error getting project", "op", op, "error", err)
+		
 		return nil, err
 	}
 
 	project.Groups, err = u.GetProjectGroups(ctx, projectID, userID, limit, offset)
 	if err != nil {
 		u.Log.Error("error getting projet groups", "op", op, "error", err)
+		
 		return nil, err
 	}
 
@@ -109,6 +115,7 @@ func (u *UseCase) GetProjects(ctx context.Context, userID uuid.UUID, limit, offs
 	projects, err := u.DB.GetProjects(ctx, userID, limit, offset)
 	if err != nil {
 		u.Log.Error("error getting projects", "op", op, "error", err)
+		
 		return nil, err
 	}
 

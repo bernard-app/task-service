@@ -2,8 +2,8 @@ package usecase
 
 import (
 	"bernard/internal/domain/entity"
+	"bernard/pkg/response"
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -16,7 +16,7 @@ func (u *UseCase) CreateTag(ctx context.Context, tag entity.Tag) (*entity.Tag, e
 	if !ok || err != nil {
 		u.Log.Warn("permission denied", "op", op, "error", err)
 		
-		return nil, errors.New("permission denied")
+		return nil, response.ErrPermissionDenied
 	}
 	
 	createdTag, err := u.DB.CreateTag(ctx, tag)
@@ -78,12 +78,13 @@ func (u *UseCase) GetTaskTags(ctx context.Context, userID uuid.UUID, taskID int6
 	if !ok || err != nil {
 		u.Log.Warn("repmission denied", "op", op, "error", err)
 		
-		return nil, errors.New("permission denied")
+		return nil,	response.ErrPermissionDenied
 	}
 	
 	tags, err := u.DB.GetTaskTags(ctx, taskID)
 	if err != nil {
 		u.Log.Error("error getting task tags", "op", op, "error", err)
+		
 		return nil, err
 	}
 
@@ -97,7 +98,7 @@ func (u *UseCase) AddTagsToTask(ctx context.Context, userID uuid.UUID, tagsIDs [
 	if !ok || err != nil {
 		u.Log.Warn("permission denied", "op", op, "error", err)
 		
-		return errors.New("permission denied")
+		return response.ErrPermissionDenied
 	}
 	
 	err = u.DB.AddTagsToTask(ctx, tagsIDs, taskID)
@@ -115,7 +116,7 @@ func (u *UseCase) RemoveTagsFromTask(ctx context.Context, userID uuid.UUID, tags
 	if !ok || err != nil {
 		u.Log.Warn("permission denied", "op", op, "error", err)
 		
-		return errors.New("permission denied")
+		return response.ErrPermissionDenied
 	}
 	
 	err = u.DB.RemoveTagsFromTask(ctx, tagsIDs, taskID)
@@ -133,7 +134,7 @@ func (u *UseCase) RemoveAllTagsFromTask(ctx context.Context, userID uuid.UUID, t
 	if !ok || err != nil {
 		u.Log.Warn("permission denied", "op", op, "error", err)
 		
-		return errors.New("permission denied")
+		return response.ErrPermissionDenied
 	}
 	
 	err = u.DB.RemoveAllTagsFromTask(ctx, taskID)

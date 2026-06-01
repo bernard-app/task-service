@@ -2,8 +2,8 @@ package usecase
 
 import (
 	"bernard/internal/domain/entity"
+	"bernard/pkg/response"
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -16,7 +16,7 @@ func (u *UseCase) CreateGroup(ctx context.Context, group entity.Group) (*entity.
 	if !ok || err != nil {
 		u.Log.Warn("permission denied", "op", op, "error", err)
 
-		return nil, errors.New("permission denied")
+		return nil, fmt.Errorf("%s: %w", op, response.ErrPermissionDenied)
 	}
 	
 	createdGroup, err := u.DB.CreateGroup(ctx, group)
@@ -37,7 +37,7 @@ func (u *UseCase) UpdateGroup(ctx context.Context, group entity.UpdateGroupReque
 		if !ok || err != nil {
 			u.Log.Warn("permission denied", "op", op, "error", err)
 
-			return nil, errors.New("permission denied")
+			return nil, fmt.Errorf("%s: %w", op, response.ErrPermissionDenied)
 		}
 	}
 	
@@ -57,7 +57,7 @@ func (u *UseCase) DeleteGroup(ctx context.Context, groupID int64, userID uuid.UU
 	if groupID <= 0 {
 		u.Log.Error("invalid group id")
 
-		return fmt.Errorf("invalid group id")
+		return response.ErrInvalidArgument
 	}
 
 	err := u.DB.DeleteGroup(ctx, groupID, userID)
@@ -97,7 +97,7 @@ func (u *UseCase) GetProjectGroups(ctx context.Context, projectID int64, userID 
 	if !ok || err != nil {
 		u.Log.Warn("permission denied", "op", op, "error", err)
 
-		return nil, errors.New("permission denied")
+		return nil, fmt.Errorf("%s: %w", op, response.ErrPermissionDenied)
 	}
 	
 	groups, err := u.DB.GetProjectGroups(ctx, userID, projectID, limit, offset)

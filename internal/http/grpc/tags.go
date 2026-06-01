@@ -2,9 +2,7 @@ package grpc
 
 import (
 	"bernard/internal/domain/entity"
-	"bernard/internal/usecase"
 	"context"
-	"errors"
 
 	taskv1 "github.com/bernard-app/bernard-protos/pkg/task_v1"
 	"google.golang.org/grpc/codes"
@@ -39,11 +37,7 @@ func (t *TaskHandler) CreateTag(ctx context.Context, req *taskv1.CreateTagReques
 
 	createdTag, err := t.uc.CreateTag(ctx, tag)
 	if err != nil {
-		if errors.Is(err, usecase.ErrAlreadyExists) {
-			return nil, status.Error(codes.AlreadyExists, "tag already exists")
-		}
-		
-		return nil, status.Error(codes.InvalidArgument, "internal server error")
+		return nil, HandleError(err)
 	}
 
 	return &taskv1.CreateTagResponse{
@@ -65,11 +59,7 @@ func (t *TaskHandler) UpdateTag(ctx context.Context, req *taskv1.UpdateTagReques
 
 	tag, err := t.uc.UpdateTag(ctx, req.GetId(), req.Name, req.Color, userID)
 	if err != nil {
-		if errors.Is(err, usecase.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, "tag not found")
-		}
-		
-		return nil, status.Error(codes.InvalidArgument, "internal server error")
+		return nil, HandleError(err)
 	}
 
 	return &taskv1.UpdateTagResponse{
@@ -90,7 +80,7 @@ func (t *TaskHandler) DeleteTag(ctx context.Context, req *taskv1.DeleteTagReques
 
 	err = t.uc.DeleteTag(ctx, req.GetId(), userID)
 	if err != nil {
-		return &taskv1.DeleteTagResponse{Success: false}, status.Error(codes.InvalidArgument, "internal server error")
+		return &taskv1.DeleteTagResponse{Success: false}, HandleError(err)
 	}
 
 	return &taskv1.DeleteTagResponse{Success: true}, nil
@@ -104,11 +94,7 @@ func (t *TaskHandler) GetTag(ctx context.Context, req *taskv1.GetTagRequest) (*t
 
 	task, err := t.uc.GetTag(ctx, req.GetId(), userID)
 	if err != nil {
-		if errors.Is(err, usecase.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, "tag not found")
-		}
-		
-		return nil, status.Error(codes.Internal, "interanl server error")
+		return nil, HandleError(err)
 	}
 
 	return &taskv1.GetTagResponse{
@@ -129,11 +115,7 @@ func (t *TaskHandler) GetTagList(ctx context.Context, req *taskv1.GetTagListRequ
 
 	tags, err := t.uc.GetTagList(ctx, userID, req.GetLimit(), req.GetOffset())
 	if err != nil {
-		if errors.Is(err, usecase.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, "tag not found")
-		}
-		
-		return nil, status.Error(codes.Internal, "internal server error")
+		return nil, HandleError(err)
 	}
 
 	var grpcTags []*taskv1.Tag
@@ -160,11 +142,7 @@ func (t *TaskHandler) GetTaskTags(ctx context.Context, req *taskv1.GetTaskTagsRe
 	
 	tags, err := t.uc.GetTaskTags(ctx, userID, req.GetTaskId())
 	if err != nil {
-		if errors.Is(err, usecase.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, "tag not found")
-		}
-		
-		return nil, status.Error(codes.Internal, "internal server error")
+		return nil, HandleError(err)
 	}
 
 	var grpcTags []*taskv1.Tag
@@ -192,11 +170,7 @@ func (t *TaskHandler) AddTagsToTask(ctx context.Context, req *taskv1.AddTagsToTa
 
 	err = t.uc.AddTagsToTask(ctx, userID, req.GetTagsIds(), req.GetTaskId())
 	if err != nil {
-		if errors.Is(err, usecase.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, "tag not found")
-		}
-		
-		return &taskv1.AddTagsToTaskResponse{Succes: false}, status.Error(codes.Internal, "internal server error")
+		return &taskv1.AddTagsToTaskResponse{Succes: false}, HandleError(err)
 	}
 
 	return &taskv1.AddTagsToTaskResponse{Succes: true}, nil
@@ -210,11 +184,7 @@ func (t *TaskHandler) RemoveTagsFromTask(ctx context.Context, req *taskv1.Remove
 
 	err = t.uc.RemoveTagsFromTask(ctx, userID, req.GetTagsIds(), req.GetTaskId())
 	if err != nil {
-		if errors.Is(err, usecase.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, "tag not found")
-		}
-		
-		return &taskv1.RemoveTagsFromTaskResponse{Success: false}, status.Error(codes.Internal, "internal server error")
+		return &taskv1.RemoveTagsFromTaskResponse{Success: false}, HandleError(err)
 	}
 
 	return &taskv1.RemoveTagsFromTaskResponse{Success: true}, nil
@@ -228,11 +198,7 @@ func (t *TaskHandler) RemoveAllTagsFromTask(ctx context.Context, req *taskv1.Rem
 
 	err = t.uc.RemoveAllTagsFromTask(ctx, userID,  req.GetTaskId())
 	if err != nil {
-		if errors.Is(err, usecase.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, "tag not found")
-		}
-		
-		return &taskv1.RemoveAllTagsFromTaskResponse{Success: false}, status.Error(codes.Internal, "internal server error")
+		return &taskv1.RemoveAllTagsFromTaskResponse{Success: false},HandleError(err)
 	}
 
 	return &taskv1.RemoveAllTagsFromTaskResponse{Success: true}, nil

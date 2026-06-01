@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"bernard/internal/domain/entity"
-	"bernard/internal/usecase"
+	"bernard/pkg/response"
 	"context"
 	"errors"
 	"fmt"
@@ -37,9 +37,9 @@ func (s *Storage) CreateTag(ctx context.Context, tag entity.Tag) (*entity.Tag, e
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, fmt.Errorf("%s: %w", op, usecase.ErrAlreadyExists)
+			return nil, fmt.Errorf("%s: %w", op, response.ErrAlreadyExists)
 		}
-		
+
 		return nil, fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)
 	}
 
@@ -81,7 +81,7 @@ func (s *Storage) UpdateTag(ctx context.Context, tagID int64, name *string, colo
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			return nil, fmt.Errorf("%s: %w", op, response.ErrNotFound)
 		}
 
 		return nil, fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)
@@ -110,7 +110,7 @@ func (s *Storage) DeleteTag(ctx context.Context, tagID int64, userID uuid.UUID) 
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return fmt.Errorf("tag does not exist")
+			return response.ErrNotFound
 		}
 
 		return fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)
@@ -145,7 +145,7 @@ func (s *Storage) GetTag(ctx context.Context, tagID int64, userID uuid.UUID) (*e
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			return nil, fmt.Errorf("%s: %w", op, response.ErrNotFound)
 		}
 
 		return nil, fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)
@@ -189,7 +189,7 @@ func (s *Storage) GetTagList(ctx context.Context, userID uuid.UUID, limit, offse
 			var pgErr *pgconn.PgError
 
 			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-				return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+				return nil, fmt.Errorf("%s: %w", op, response.ErrNotFound)
 			}
 
 			return nil, fmt.Errorf("cannot scan rows. op: %s, error: %w", op, err)
@@ -241,7 +241,7 @@ func (s *Storage) GetTaskTags(ctx context.Context, taskID int64) ([]*entity.Tag,
 			var pgErr *pgconn.PgError
 
 			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-				return nil, fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+				return nil, fmt.Errorf("%s: %w", op, response.ErrNotFound)
 			}
 
 			return nil, fmt.Errorf("%s: cannot scan row: %w", op, err)
@@ -278,11 +278,11 @@ func (s *Storage) AddTagsToTask(ctx context.Context, tagsIDs []int64, taskID int
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return fmt.Errorf("%s: %w", op, usecase.ErrAlreadyExists)
+			return fmt.Errorf("%s: %w", op, response.ErrAlreadyExists)
 		}
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return fmt.Errorf("%s: %w", op, usecase.ErrNotFound)
+			return fmt.Errorf("%s: %w", op, response.ErrNotFound)
 		}
 
 		return fmt.Errorf("cannot execute query. op: %s, error: %w", op, err)
@@ -338,7 +338,7 @@ func (s *Storage) CheckTagOwnership(ctx context.Context, userID uuid.UUID, tagID
 	const op = "storage.CheckTagOwnership"
 
 	tx := s.getEngine(ctx)
-	
+
 	query, args, err := sq.
 		Select("1").
 		From("tags").
@@ -352,12 +352,12 @@ func (s *Storage) CheckTagOwnership(ctx context.Context, userID uuid.UUID, tagID
 
 	var dummy int
 	err = tx.QueryRow(ctx, query, args...).Scan(&dummy)
-	
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
-		
+
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 
