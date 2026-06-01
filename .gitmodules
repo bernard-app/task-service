@@ -1,0 +1,3 @@
+[submodule "bernard-protos"]
+	path = bernard-protos
+	url = https://github.com/bernard-app/bernard-protos

@@ -1,7 +1,7 @@
 env: "local"
 http_server:
-  address: 0.0.0.0:8089
+  address: 0.0.0.0:8092
   timeout: 4s
   idle_timeout: 60s
 redis:
-  addr: "localhost:6379"
+  addr: "bernard-valkey:6379"
