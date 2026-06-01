@@ -3,14 +3,22 @@ package usecase
 import (
 	"bernard/internal/domain/entity"
 	"context"
+	"errors"
 	"fmt"
-	
+
 	"github.com/google/uuid"
 )
 
 func (u *UseCase) CreateTag(ctx context.Context, tag entity.Tag) (*entity.Tag, error) {
 	const op = "usecase.CreateTag"
 
+	ok, err := u.DB.CheckProjectOwnership(ctx, tag.UserID, tag.ProjectID)
+	if !ok || err != nil {
+		u.Log.Warn("permission denied", "op", op, "error", err)
+		
+		return nil, errors.New("permission denied")
+	}
+	
 	createdTag, err := u.DB.CreateTag(ctx, tag)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -63,9 +71,16 @@ func (u *UseCase) GetTagList(ctx context.Context, userID uuid.UUID, limit, offse
 	return tags, nil
 }
 
-func (u *UseCase) GetTaskTags(ctx context.Context, taskID int64) ([]*entity.Tag, error) {
+func (u *UseCase) GetTaskTags(ctx context.Context, userID uuid.UUID, taskID int64) ([]*entity.Tag, error) {
 	const op = "usecase.GetTaskTags"
 
+	ok, err := u.DB.CheckTaskOwnership(ctx, userID, taskID)
+	if !ok || err != nil {
+		u.Log.Warn("repmission denied", "op", op, "error", err)
+		
+		return nil, errors.New("permission denied")
+	}
+	
 	tags, err := u.DB.GetTaskTags(ctx, taskID)
 	if err != nil {
 		u.Log.Error("error getting task tags", "op", op, "error", err)
@@ -75,10 +90,17 @@ func (u *UseCase) GetTaskTags(ctx context.Context, taskID int64) ([]*entity.Tag,
 	return tags, nil
 }
 
-func (u *UseCase) AddTagsToTask(ctx context.Context, tagsIDs []int64, taskID int64) error {
+func (u *UseCase) AddTagsToTask(ctx context.Context, userID uuid.UUID, tagsIDs []int64, taskID int64) error {
 	const op = "usecase.AddTagToTask"
 
-	err := u.DB.AddTagsToTask(ctx, tagsIDs, taskID)
+	ok, err := u.DB.CheckTaskOwnership(ctx, userID, taskID)
+	if !ok || err != nil {
+		u.Log.Warn("permission denied", "op", op, "error", err)
+		
+		return errors.New("permission denied")
+	}
+	
+	err = u.DB.AddTagsToTask(ctx, tagsIDs, taskID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -86,10 +108,17 @@ func (u *UseCase) AddTagsToTask(ctx context.Context, tagsIDs []int64, taskID int
 	return nil
 }
 
-func (u *UseCase) RemoveTagsFromTask(ctx context.Context, tagsIDs []int64, taskID int64) error {
+func (u *UseCase) RemoveTagsFromTask(ctx context.Context, userID uuid.UUID, tagsIDs []int64, taskID int64) error {
 	const op = "usecase.RemoveTagFromTask"
 
-	err := u.DB.RemoveTagsFromTask(ctx, tagsIDs, taskID)
+	ok, err := u.DB.CheckTaskOwnership(ctx, userID, taskID)
+	if !ok || err != nil {
+		u.Log.Warn("permission denied", "op", op, "error", err)
+		
+		return errors.New("permission denied")
+	}
+	
+	err = u.DB.RemoveTagsFromTask(ctx, tagsIDs, taskID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -97,10 +126,17 @@ func (u *UseCase) RemoveTagsFromTask(ctx context.Context, tagsIDs []int64, taskI
 	return nil
 }
 
-func (u *UseCase) RemoveAllTagsFromTask(ctx context.Context, taskID int64) error {
+func (u *UseCase) RemoveAllTagsFromTask(ctx context.Context, userID uuid.UUID, taskID int64) error {
 	const op = "usecase.RemoveAllTagsFromTask"
 
-	err := u.DB.RemoveAllTagsFromTask(ctx, taskID)
+	ok, err := u.DB.CheckTaskOwnership(ctx, userID, taskID)
+	if !ok || err != nil {
+		u.Log.Warn("permission denied", "op", op, "error", err)
+		
+		return errors.New("permission denied")
+	}
+	
+	err = u.DB.RemoveAllTagsFromTask(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

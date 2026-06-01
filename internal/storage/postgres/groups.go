@@ -9,6 +9,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -198,4 +199,34 @@ func (s *Storage) GetProjectGroups(ctx context.Context, userID uuid.UUID, projec
 	}
 
 	return groups, nil
+}
+
+func (s *Storage) CheckGroupOwnership(ctx context.Context, userID uuid.UUID, groupID int64) (bool, error) {
+	const op = "storage.CheckGroupOwnership"
+
+	tx := s.getEngine(ctx)
+	
+	query, args, err := sq.
+		Select("1").
+		From("groups").
+		Where(sq.Eq{"id": groupID, "user_id": userID}).
+		Limit(1).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var dummy int
+	err = tx.QueryRow(ctx, query, args...).Scan(&dummy)
+	
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return true, nil
 }
