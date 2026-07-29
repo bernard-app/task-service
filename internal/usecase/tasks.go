@@ -181,15 +181,6 @@ func (u *UseCase) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.
 		return nil, err
 	}
 
-	for _, task := range tasks {
-		task.Tags, err = u.DB.GetTaskTags(ctx, task.ID)
-		if err != nil {
-			u.Log.Error("error gettig task tags", "op", op, "error", err)
-
-			return nil, err
-		}
-	}
-	
 	return tasks, nil
 }
 
@@ -268,4 +259,14 @@ func (u *UseCase) ArchiveTask(ctx context.Context, userID uuid.UUID, id int64) (
 	}
 
 	return task, err
+}
+
+func extractTaskID(tasks []*entity.Task) []int64 {
+	ids := make([]int64, 0, len(tasks))
+
+	for _, task := range tasks {
+		ids = append(ids, task.ID)
+	}
+
+	return ids
 }

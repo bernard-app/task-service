@@ -107,14 +107,15 @@ func (u *UseCase) GetProjectGroups(ctx context.Context, projectID int64, userID 
 		return nil, err 
 	}
 
+	return groups, nil
+}
+
+func extractGroupIDs(groups []*entity.Group) []int64 {
+	ids := make([]int64, 0, len(groups))
+
 	for _, group := range groups {
-		group.Tasks, err = u.GetGroupTasks(ctx, group.ID, userID, limit, offset)
-		if err != nil {
-			u.Log.Error("error getting group tasks", "op", op, "error", err)
-			
-			return nil, err
-		}
+		ids = append(ids, group.ID)
 	}
 
-	return groups, nil
+	return ids
 }

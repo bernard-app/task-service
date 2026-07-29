@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -366,11 +367,12 @@ func TestUseCase_GetProjectTree(t *testing.T) {
 			mockSetup: func(ms *mocks.MockStorage, mr *mocks.MockRedis, a args) {
 				mr.On("GetTempProject", a.ctx, a.userID, a.projectID).Return(nil, errors.New("no cache")).Once()
 				ms.On("GetProject", a.ctx, a.projectID, a.userID).Return(&entity.Project{ID: 1}, nil).Once()
-				ms.On("CheckProjectOwnership", a.ctx, a.userID, a.projectID).Return(true, nil).Once()
-				ms.On("GetProjectGroups", a.ctx, a.userID, a.projectID, a.limit, a.offset).Return([]*entity.Group{}, nil).Once()
-				mr.On("SetTempProject", a.ctx, &entity.Project{ID: 1}).Return(nil).Once()
+				ms.On("GetProjectGroups", a.ctx, a.userID, a.projectID, a.limit, a.offset).Return([]*entity.Group{{ID: 1}}, nil).Once()
+				ms.On("GetTasksByGroupIDs", a.ctx, []int64{1}).Return([]*entity.Task{{ID: 1}}, nil).Once()
+				ms.On("GetTagsByTaskIDs", a.ctx, []int64{1}).Return([]*entity.Tag{{ID: 1}}, nil).Once()
+				mr.On("SetTempProject", a.ctx, mock.AnythingOfType("*entity.Project")).Return(nil).Once()
 			},
-			want: &entity.Project{ID: 1},
+			want: &entity.Project{ID: 1, Groups: []*entity.Group{{ID: 1}}},
 			wantErr: false,
 		},
 	}
@@ -403,72 +405,3 @@ func TestUseCase_GetProjectTree(t *testing.T) {
 		})
 	}
 }
-
-// func TestUseCase_GetProjects(t *testing.T) {
-// 	type fields struct {
-// 		cfg *config.Config
-// 		log *slog.Logger
-// 		db  *mocks.MockStorage
-// 	}
-
-// 	type args struct {
-// 		ctx    context.Context
-// 		userID uuid.UUID
-// 		limit  uint64
-// 		offset uint64
-// 	}
-
-// 	tests := []struct {
-// 		name    string
-// 		fields  fields
-// 		args    args
-// 		want    []*entity.Project
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name: "success",
-// 			args: args{
-// 				ctx:    context.Background(),
-// 				userID: uuid.New(),
-// 			},
-// 			want:    []*entity.Project{},
-// 			wantErr: false,
-// 		},
-// 		{
-// 			name: "error",
-// 			args: args{
-// 				ctx:    context.Background(),
-// 				userID: uuid.Nil,
-// 			},
-// 			want:    nil,
-// 			wantErr: true,
-// 		},
-// 	}
-
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-// 			mockStorage := mocks.NewMockStorage(t)
-
-// 			mockStorage.On("GetProjects", tt.args.ctx, tt.args.userID, tt.args.limit, tt.args.offset).Maybe().Return(tt.want, nil)
-
-// 			u := &usecase.UseCase{
-// 				Log:    log,
-// 				DB:     mockStorage,
-// 			}
-
-// 			got, err := u.GetProjects(tt.args.ctx, tt.args.userID, tt.args.limit, tt.args.offset)
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("GetProjects() error = %v, wantErr %v", err, tt.wantErr)
-// 			}
-
-// 			if tt.want != nil {
-// 				require.Equal(t, tt.want, got)
-// 			}
-
-// 			if tt.wantErr {
-// 				require.Error(t, err)
-// 			}
-// 		})
-// 	}
-// }

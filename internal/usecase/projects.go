@@ -69,7 +69,7 @@ func (u *UseCase) DeleteProject(ctx context.Context, projectID int64, userID uui
 }
 
 func (u *UseCase) GetProject(ctx context.Context, projectID int64, userID uuid.UUID, limit, offset uint64) (*entity.Project, error) {
-	const op = "storage.GetProject"
+	const op = "usecase.GetProject"
 
 	isCache := true
 
@@ -89,17 +89,47 @@ func (u *UseCase) GetProject(ctx context.Context, projectID int64, userID uuid.U
 		return nil, err
 	}
 
-	project.Groups, err = u.DB.GetProjectGroups(ctx, userID, projectID, limit, offset)
+	groups, err := u.DB.GetProjectGroups(ctx, userID, projectID, limit, offset)
 	if err != nil {
 		u.Log.Error("error getting projet groups", "op", op, "error", err)
 
 		return nil, err
 	}
 
-	for _, group := range project.Groups {
-		project.TaskCount += group.TaskCount
+	tasks, err := u.DB.GetTasksByGroupIDs(ctx, extractGroupIDs(groups))
+	if err != nil {
+		u.Log.Error("error getting tasks", "op", op, "error", err)
+		
+		return nil, err
+	}
+	
+	tags, err := u.DB.GetTagsByTaskIDs(ctx, extractTaskID(tasks))
+	if err != nil {
+		u.Log.Error("error getting tags", "op", op, "error", err)
+
+		return nil, err
 	}
 
+	tagsByTask := make(map[int64][]*entity.Tag)
+	for _, tag := range tags {
+	    tagsByTask[tag.TaskID] = append(tagsByTask[tag.TaskID], tag)
+	}
+	
+	tasksByGroup := make(map[int64][]*entity.Task)
+	for _, task := range tasks {
+	    task.Tags = tagsByTask[task.ID]
+
+		if task.GroupID != nil {
+            tasksByGroup[*task.GroupID] = append(tasksByGroup[*task.GroupID], task)
+        }
+	}
+
+	for i, group := range groups {
+    	groups[i].Tasks = tasksByGroup[group.ID]
+	}
+
+	project.Groups = groups
+	
 	err = u.Redis.SetTempProject(ctx, project)
 	if err != nil {
 		u.Log.Error("error setting cache", "op", op, "error", err)
