@@ -236,142 +236,173 @@ func TestUseCase_UpdateProject(t *testing.T) {
 	}
 }
 
-// func TestUseCase_DeleteProject(t *testing.T) {
-// 	type fields struct {
-// 		log *slog.Logger
-// 		db  *mocks.MockStorage
-// 	}
+func TestUseCase_DeleteProject(t *testing.T) {
+	type args struct {
+		ctx       context.Context
+		projectID int64
+		userID    uuid.UUID
+	}
 
-// 	type args struct {
-// 		ctx       context.Context
-// 		projectID int64
-// 		userID    uuid.UUID
-// 	}
+	tests := []struct {
+		name    string
+		args    args
+		mockSetup func(ms *mocks.MockStorage, mr *mocks.MockRedis, a args)
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx:       context.Background(),
+				projectID: 1,
+				userID:    uuid.New(),
+			},
+			mockSetup: func(ms *mocks.MockStorage, mr *mocks.MockRedis, a args) {
+				ms.On("DeleteProject", a.ctx, a.projectID, a.userID).Return(nil).Once()
+				mr.On("InvalidateProjectCache", a.ctx, a.userID, a.projectID).Return(nil).Once()
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid id error",
+			args: args{
+				ctx:       context.Background(),
+				projectID: -1,
+				userID:    uuid.New(),
+			},
+			wantErr: true,
+		},
+		{
+			name: "db error",
+			args: args{
+				ctx: context.Background(),
+				projectID: 1,
+				userID: uuid.New(),
+			},
+			mockSetup: func(ms *mocks.MockStorage, mr *mocks.MockRedis, a args) {
+				ms.On("DeleteProject", a.ctx, a.projectID, a.userID).Return(errors.New("db error")).Once()
+			},
+			wantErr: true,
+		},
+		{
+			name: "cache error",
+			args: args{
+				ctx: context.Background(),
+				projectID: 1,
+				userID: uuid.New(),
+			},
+			mockSetup: func(ms *mocks.MockStorage, mr *mocks.MockRedis, a args) {
+				ms.On("DeleteProject", a.ctx, a.projectID, a.userID).Return(nil).Once()
+				mr.On("InvalidateProjectCache", a.ctx, a.userID, a.projectID).Return(errors.New("cache error")).Once()
+			},
+			wantErr: false,
+		},
+	}
 
-// 	tests := []struct {
-// 		name    string
-// 		fields  fields
-// 		args    args
-// 		want    *entity.Project
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name: "success",
-// 			args: args{
-// 				ctx:       context.Background(),
-// 				projectID: 1,
-// 				userID:    uuid.New(),
-// 			},
-// 			wantErr: false,
-// 		},
-// 		{
-// 			name: "error",
-// 			args: args{
-// 				ctx:       context.Background(),
-// 				projectID: -1,
-// 				userID:    uuid.New(),
-// 			},
-// 			wantErr: true,
-// 		},
-// 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			log := slog.New(slog.NewTextHandler(io.Discard, nil))
+			mockStorage := mocks.NewMockStorage(t)
+			mockRedis := mocks.NewMockRedis(t)
 
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-// 			mockStorage := mocks.NewMockStorage(t)
+			if tt.mockSetup != nil {
+				tt.mockSetup(mockStorage, mockRedis, tt.args)
+			}
 
-// 			mockStorage.On("DeleteProject", tt.args.ctx, tt.args.projectID).Maybe().Return(tt.want, nil)
+			u := &usecase.UseCase{
+				Log:    log,
+				DB:     mockStorage,
+				Redis: mockRedis,
+			}
 
-// 			u := &usecase.UseCase{
-// 				Log:    log,
-// 				DB:     mockStorage,
-// 			}
+			err := u.DeleteProject(tt.args.ctx, tt.args.projectID, tt.args.userID)
+			
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
 
-// 			err := u.DeleteProject(tt.args.ctx, tt.args.projectID, tt.args.userID)
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("DeleteProject() error = %v, wantErr %v", err, tt.wantErr)
-// 			}
+func TestUseCase_GetProjectTree(t *testing.T) {
+	type args struct {
+		ctx       context.Context
+		projectID int64
+		userID    uuid.UUID
+		limit     uint64
+		offset    uint64
+	}
 
-// 			if tt.wantErr {
-// 				require.Error(t, err)
-// 			}
-// 		})
-// 	}
-// }
+	tests := []struct {
+		name    string
+		args    args
+		mockSetup func(ms *mocks.MockStorage, mr *mocks.MockRedis, a args)
+		want    *entity.Project
+		wantErr bool
+	}{
+		{ 
+			name: "success cache", 
+			args: args{ 
+				ctx:       context.Background(),
+				projectID: 1,
+				userID:    uuid.New(),
+			},
+			mockSetup: func(ms *mocks.MockStorage, mr *mocks.MockRedis, a args) {
+				mr.On("GetTempProject", a.ctx, a.userID, a.projectID).Return(&entity.Project{ID: 1}, nil).Once()
+			},
+			want: &entity.Project{
+				ID: 1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "success no cache found",
+			args: args{
+				ctx: context.Background(),
+				projectID: 1,
+				userID: uuid.New(),
+			},
+			mockSetup: func(ms *mocks.MockStorage, mr *mocks.MockRedis, a args) {
+				mr.On("GetTempProject", a.ctx, a.userID, a.projectID).Return(nil, errors.New("no cache")).Once()
+				ms.On("GetProject", a.ctx, a.projectID, a.userID).Return(&entity.Project{ID: 1}, nil).Once()
+				ms.On("CheckProjectOwnership", a.ctx, a.userID, a.projectID).Return(true, nil).Once()
+				ms.On("GetProjectGroups", a.ctx, a.userID, a.projectID, a.limit, a.offset).Return([]*entity.Group{}, nil).Once()
+				mr.On("SetTempProject", a.ctx, &entity.Project{ID: 1}).Return(nil).Once()
+			},
+			want: &entity.Project{ID: 1},
+			wantErr: false,
+		},
+	}
 
-// func TestUseCase_GetProjectTree(t *testing.T) {
-// 	type fields struct {
-// 		cfg *config.Config
-// 		log *slog.Logger
-// 		db  *mocks.MockStorage
-// 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			log := slog.New(slog.NewTextHandler(io.Discard, nil))
+			mockStorage := mocks.NewMockStorage(t)
+			mockRedis := mocks.NewMockRedis(t)
 
-// 	type args struct {
-// 		ctx       context.Context
-// 		projectID int64
-// 		userID    uuid.UUID
-// 		limit     uint64
-// 		offset    uint64
-// 	}
+			if tt.mockSetup != nil {
+				tt.mockSetup(mockStorage, mockRedis, tt.args)
+			}
 
-// 	tests := []struct {
-// 		name    string
-// 		fields  fields
-// 		args    args
-// 		want    *entity.Project
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name: "success",
-// 			args: args{
-// 				ctx:       context.Background(),
-// 				projectID: 1,
-// 				userID:    uuid.New(),
-// 			},
-// 			want: &entity.Project{
-// 				ID: 1,
-// 			},
-// 			wantErr: false,
-// 		},
-// 		{
-// 			name: "error",
-// 			args: args{
-// 				ctx:       context.Background(),
-// 				projectID: -1,
-// 				userID:    uuid.New(),
-// 			},
-// 			want:    nil,
-// 			wantErr: true,
-// 		},
-// 	}
+			u := &usecase.UseCase{
+				Log:    log,
+				DB:     mockStorage,
+				Redis: mockRedis,
+			}
 
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-// 			mockStorage := mocks.NewMockStorage(t)
-
-// 			mockStorage.On("GetProject", tt.args.ctx, tt.args.projectID, mock.Anything).Maybe().Return(tt.want, nil)
-
-// 			u := &usecase.UseCase{
-// 				Log:    log,
-// 				DB:     mockStorage,
-// 			}
-
-// 			got, err := u.GetProject(tt.args.ctx, tt.args.projectID, tt.args.userID, tt.args.limit, tt.args.offset)
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("GetProjectTree() error = %v, wantErr %v", err, tt.wantErr)
-// 			}
-
-// 			if tt.want != nil {
-// 				require.Equal(t, tt.want, got)
-// 			}
-
-// 			if tt.wantErr {
-// 				require.Error(t, err)
-// 			}
-// 		})
-// 	}
-// }
+			got, err := u.GetProject(tt.args.ctx, tt.args.projectID, tt.args.userID, tt.args.limit, tt.args.offset)
+			
+			if tt.wantErr {
+				require.Error(t, err)
+				require.Nil(t, got)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
 
 // func TestUseCase_GetProjects(t *testing.T) {
 // 	type fields struct {

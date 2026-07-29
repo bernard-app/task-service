@@ -71,16 +71,16 @@ func (u *UseCase) DeleteProject(ctx context.Context, projectID int64, userID uui
 func (u *UseCase) GetProject(ctx context.Context, projectID int64, userID uuid.UUID, limit, offset uint64) (*entity.Project, error) {
 	const op = "storage.GetProject"
 
-	//isCache := true
+	isCache := true
 
-	//cachedProject, err := u.Redis.GetTempProject(ctx, userID, projectID)
-	//if err != nil {
-	//	isCache = false
-	//}
+	cachedProject, err := u.Redis.GetTempProject(ctx, userID, projectID)
+	if err != nil {
+		isCache = false
+	}
 
-	//if isCache {
-	//	return cachedProject, nil
-	//}
+	if isCache {
+		return cachedProject, nil
+	}
 
 	project, err := u.DB.GetProject(ctx, projectID, userID)
 	if err != nil {
@@ -89,7 +89,7 @@ func (u *UseCase) GetProject(ctx context.Context, projectID int64, userID uuid.U
 		return nil, err
 	}
 
-	project.Groups, err = u.GetProjectGroups(ctx, projectID, userID, limit, offset)
+	project.Groups, err = u.DB.GetProjectGroups(ctx, userID, projectID, limit, offset)
 	if err != nil {
 		u.Log.Error("error getting projet groups", "op", op, "error", err)
 
