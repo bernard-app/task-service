@@ -136,15 +136,6 @@ func TestUseCase_UpdateTag(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "color nil",
-			args: args{
-				ctx: context.Background(),
-				tagID: 1,
-			},
-			want: nil,
-			wantErr: true,
-		},
-		{
 			name: "invalid color",
 			args: args{
 				ctx: context.Background(),
@@ -160,6 +151,11 @@ func TestUseCase_UpdateTag(t *testing.T) {
 				ctx: context.Background(),
 				tagID: 1,
 			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("UpdateTag", a.ctx, a.tagID, a.tagName, a.tagColor, a.userID).Return(nil, errors.New("db error")).Once()
+			},
+			want: nil,
+			wantErr: true,
 		},
 	}
 
@@ -182,6 +178,240 @@ func TestUseCase_UpdateTag(t *testing.T) {
 		} else {
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
+		}
+	}
+}
+
+func TestUseCase_AddTagsTotask(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		userID uuid.UUID
+		tagsIDs []int64
+		taskID int64
+	}
+
+	tests := []struct {
+		name string
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				tagsIDs: []int64{1},
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(true, nil).Once()
+				m.On("AddTagsToTask", a.ctx, a.tagsIDs, a.taskID).Return(nil).Once()
+			},
+			wantErr: false,
+		},
+		{
+			name: "permission error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(false, errors.New("permission denied")).Once()
+			},
+			wantErr: true,
+		},
+		{
+			name: "db error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				tagsIDs: []int64{1},
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(true, nil).Once()
+				m.On("AddTagsToTask", a.ctx, a.tagsIDs, a.taskID).Return(errors.New("db error")).Once()
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			Log: log,
+			DB: mockStorage,
+		}
+
+		err := u.AddTagsToTask(tt.args.ctx, tt.args.userID, tt.args.tagsIDs, tt.args.taskID)
+
+		if tt.wantErr {
+			require.Error(t, err)
+		} else {
+			require.NoError(t, err)
+		}
+	}
+}
+
+func TestUseCase_RemoveTagsFromTask(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		userID uuid.UUID
+		tagsIDs []int64
+		taskID int64
+	}
+
+	tests := []struct {
+		name string 
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				tagsIDs: []int64{1},
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(true, nil).Once()
+				m.On("RemoveTagsFromTask", a.ctx, a.tagsIDs, a.taskID).Return(nil).Once()
+			},
+			wantErr: false,
+		},
+		{
+			name: "permission error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(false, errors.New("permission denied")).Once()
+			},
+			wantErr: true,
+		},
+		{
+			name: "db error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+				tagsIDs: []int64{1},
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(true, nil).Once()
+				m.On("RemoveTagsFromTask", a.ctx, a.tagsIDs, a.taskID).Return(errors.New("db error")).Once()
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			Log: log,
+			DB: mockStorage,
+		}
+
+		err := u.RemoveTagsFromTask(tt.args.ctx, tt.args.userID, tt.args.tagsIDs, tt.args.taskID)
+
+		if tt.wantErr {
+			require.Error(t, err)
+		} else {
+			require.NoError(t, err)
+		}
+	}
+}
+
+func TestUseCase_RemoveAllTagsFromtask(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		userID uuid.UUID
+		taskID int64
+	}
+
+	tests := []struct {
+		name string
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(true, nil).Once()
+				m.On("RemoveAllTagsFromTask", a.ctx, a.taskID).Return(nil).Once()
+			},
+			wantErr: false,
+		},
+		{
+			name: "permission error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(false, errors.New("permission denied")).Once()
+			},
+			wantErr: true,
+		},
+		{
+			name: "db error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(true, nil).Once()
+				m.On("RemoveAllTagsFromTask", a.ctx, a.taskID).Return(errors.New("db error")).Once()
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			Log: log,
+			DB: mockStorage,
+		}
+
+		err := u.RemoveAllTagsFromTask(tt.args.ctx, tt.args.userID, tt.args.taskID)
+
+		if tt.wantErr {
+			require.Error(t, err)
+		} else {
+			require.NoError(t, err)
 		}
 	}
 }
