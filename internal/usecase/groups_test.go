@@ -310,3 +310,108 @@ func TestUseCase_DeleteGroup(t *testing.T) {
 		})
 	}
 }
+
+func TestUseCase_GetGroup(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		groupID int64 
+		userID uuid.UUID
+	}
+
+	testUserID := uuid.New()
+	groupID := int64(1)
+	taskID := int64(1)
+	
+	tests := []struct {
+		name string 
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		want *entity.Group
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				groupID: groupID,
+				userID: testUserID,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("GetGroup", a.ctx, a.userID, a.groupID).Return(&entity.Group{ID: 1}, nil).Once()
+				m.On("GetTasksByGroupIDs", a.ctx, []int64{a.groupID}).Return([]*entity.Task{{ID: 1, GroupID: &a.groupID}}, nil).Once()
+				m.On("GetTagsByTaskIDs", a.ctx, []int64{1}).Return([]*entity.Tag{{ID: 1, TaskID: 1}}, nil).Once()
+			},
+			want: &entity.Group{
+				ID: 1,
+				Tasks: []*entity.Task{{ID: 1, GroupID: &groupID, Tags: []*entity.Tag{{ID: 1, TaskID: taskID}}}},
+			},
+			wantErr: false,
+		},
+		{
+			name: "error get group",
+			args: args{
+				ctx: context.Background(),
+				groupID: groupID,
+				userID: testUserID,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("GetGroup", a.ctx, a.userID, a.groupID).Return(nil, errors.New("db error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+		{
+			name: "get tasks error",
+			args: args{
+				ctx: context.Background(),
+				groupID: groupID,
+				userID: testUserID,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("GetGroup", a.ctx, a.userID, a.groupID).Return(&entity.Group{ID: 1}, nil).Once()
+				m.On("GetTasksByGroupIDs", a.ctx, []int64{a.groupID}).Return(nil, errors.New("db error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+		{
+			name: "get tags error",
+			args: args{
+				ctx: context.Background(),
+				groupID: groupID,
+				userID: testUserID,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("GetGroup", a.ctx, a.userID, a.groupID).Return(&entity.Group{ID: 1}, nil).Once()
+				m.On("GetTasksByGroupIDs", a.ctx, []int64{a.groupID}).Return([]*entity.Task{{ID: 1, GroupID: &a.groupID}}, nil).Once()
+				m.On("GetTagsByTaskIDs", a.ctx, []int64{1}).Return(nil, errors.New("db error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			Log: log,
+			DB: mockStorage,
+		}
+
+		got, err := u.GetGroup(tt.args.ctx, tt.args.groupID, tt.args.userID)
+
+		if tt.wantErr {
+			require.Error(t, err)
+			require.Empty(t, got)
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		}
+	}
+}

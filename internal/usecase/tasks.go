@@ -60,7 +60,9 @@ func HasBaseUpdates(req entity.UpdateTaskRequest) bool {
 		req.Description != nil ||
 		req.Priority != nil ||
 		req.Status != nil ||
-		req.Deadline != nil
+		req.Deadline != nil ||
+		req.GroupID != nil ||
+		req.ProjectID != nil
 }
 
 func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64) (*entity.Task, error) {
@@ -95,7 +97,7 @@ func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 				return err
 			}
 		} else {
-			updatedTask, err = u.DB.GetTask(ctx, taskID, userID)
+			updatedTask, err = u.DB.GetTask(ctxTx, taskID, userID)
 			if err != nil {
 				return err
 			}
@@ -206,14 +208,14 @@ func (u *UseCase) GetListTask(ctx context.Context, taskFilter entity.TasksFilter
 		taskFilter.FilterType = entity.TagFilter
 	} 
 
-	if taskFilter.From != nil {
-		if taskFilter.To != nil {
-			taskFilter.FilterType = entity.DateFilter
-		} else {
-			return nil, response.ErrInvalidArgument
-		}
+	if (taskFilter.From != nil && taskFilter.To == nil) || (taskFilter.From == nil && taskFilter.To != nil) {
+		return nil, response.ErrInvalidArgument
 	}
 
+	if taskFilter.From != nil && taskFilter.To != nil {
+		taskFilter.FilterType = entity.DateFilter
+	}
+	
 	switch taskFilter.FilterType {
 	case entity.TagFilter:
 		tasks, err = u.DB.GetTasksByTag(ctx, taskFilter.UserID, *taskFilter.Tag, taskFilter.Limit, taskFilter.Offset)

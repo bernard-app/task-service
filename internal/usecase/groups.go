@@ -70,7 +70,7 @@ func (u *UseCase) DeleteGroup(ctx context.Context, groupID int64, userID uuid.UU
 	return nil
 }
 
-func (u *UseCase) GetGroup(ctx context.Context, groupID int64, userID uuid.UUID, limit, offset uint64) (*entity.Group, error) {
+func (u *UseCase) GetGroup(ctx context.Context, groupID int64, userID uuid.UUID) (*entity.Group, error) {
 	const op = "usecase.GetGroup"
 		
 	group, err := u.DB.GetGroup(ctx, userID, groupID)
@@ -80,12 +80,35 @@ func (u *UseCase) GetGroup(ctx context.Context, groupID int64, userID uuid.UUID,
 		return nil, err
 	}
 
-	group.Tasks, err = u.GetGroupTasks(ctx, group.ID, userID, limit, offset)
+	tasks, err := u.DB.GetTasksByGroupIDs(ctx, []int64{group.ID})
 	if err != nil {
-		u.Log.Error("cannot get group tasks", "op", op, "error", err)
+		u.Log.Error("error getting tasks", "op", op, "error", err)
 		
 		return nil, err
 	}
+
+	tags, err := u.DB.GetTagsByTaskIDs(ctx, extractTaskID(tasks))
+	if err != nil {
+		u.Log.Error("error getting tags", "op", op, "error", err)
+
+		return nil, err
+	}
+
+	tagsByTask := make(map[int64][]*entity.Tag)
+	for _, tag := range tags {
+	    tagsByTask[tag.TaskID] = append(tagsByTask[tag.TaskID], tag)
+	}
+	
+	tasksByGroup := make(map[int64][]*entity.Task)
+	for _, task := range tasks {
+	    task.Tags = tagsByTask[task.ID]
+
+		if task.GroupID != nil {
+            tasksByGroup[*task.GroupID] = append(tasksByGroup[*task.GroupID], task)
+        }
+	}
+
+	group.Tasks = tasksByGroup[group.ID]
 	
 	return group, nil
 }
