@@ -486,6 +486,150 @@ func TestUseCase_UpdateTask(t *testing.T) {
 	}
 }
 
+func TestUseCase_DeleteTask(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		userID uuid.UUID
+		taskID int64
+	}
+
+	tests := []struct {
+		name string
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("DeleteTask", a.ctx, a.userID, a.taskID).Return(nil).Once()
+			},
+			wantErr: false,
+		},
+		{
+			name: "db error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("DeleteTask", a.ctx, a.userID, a.taskID).Return(errors.New("db error")).Once()
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			Log: log,
+			DB: mockStorage,
+		}
+
+		err := u.DeleteTask(tt.args.ctx, tt.args.userID, tt.args.taskID)
+
+		if tt.wantErr {
+			require.Error(t, err)
+		} else {
+			require.NoError(t, err)
+		}
+	}
+}
+
+func TestUseCase_GetTask(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		userID uuid.UUID
+		taskID int64
+	}
+
+	tests := []struct {
+		name string
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		want *entity.Task
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("GetTask", a.ctx, a.taskID, a.userID).Return(&entity.Task{ID: 1}, nil).Once()
+				m.On("GetTaskTags", a.ctx, a.taskID).Return([]*entity.Tag{{ID: 1}}, nil).Once()
+			},
+			want: &entity.Task{ID: 1, Tags: []*entity.Tag{{ID: 1}}},
+			wantErr: false,
+		},
+		{
+			name: "error getting task tags",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("GetTask", a.ctx, a.taskID, a.userID).Return(&entity.Task{ID: 1}, nil).Once()
+				m.On("GetTaskTags", a.ctx, a.taskID).Return(nil, errors.New("db error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+		{
+			name: "error getting task",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("GetTask", a.ctx, a.taskID, a.userID).Return(nil, errors.New("db error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			Log: log,
+			DB: mockStorage,
+		}
+
+		got, err := u.GetTask(tt.args.ctx, tt.args.taskID, tt.args.userID)
+
+		if tt.wantErr {
+			require.Error(t, err)
+			require.Empty(t, got)
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		}
+	}
+}
+
 func TestUseCase_GetListTask(t *testing.T) {
 	type args struct {
 		ctx        context.Context
@@ -698,5 +842,72 @@ func TestUseCase_GetListTask(t *testing.T) {
 				require.Equal(t, tt.want, got)
 			}
 		})
+	}
+}
+
+func TestUseCase_ArchiveTask(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		userID uuid.UUID
+		id int64
+	}
+
+	tests := []struct {
+		name string
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		want *entity.Task
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				id: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("ArchiveTask", a.ctx, a.userID, a.id).Return(&entity.Task{ID: 1}, nil).Once()
+			},
+			want: &entity.Task{ID: 1},
+			wantErr: false,
+		},
+		{
+			name: "db error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				id: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("ArchiveTask", a.ctx, a.userID, a.id).Return(nil, errors.New("db error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			Log: log,
+			DB: mockStorage,
+		}
+
+		got, err := u.ArchiveTask(tt.args.ctx, tt.args.userID, tt.args.id)
+
+		if tt.wantErr {
+			require.Error(t, err)
+			require.Empty(t, got)
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		}
 	}
 }

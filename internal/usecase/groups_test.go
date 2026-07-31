@@ -415,3 +415,104 @@ func TestUseCase_GetGroup(t *testing.T) {
 		}
 	}
 }
+
+func TestUseCase_GetProjectGroups(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		projectID int64 
+		userID uuid.UUID
+		limit uint64
+		offset uint64
+	}
+
+	tests := []struct {
+		name string
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		want []*entity.Group
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				projectID: 1,
+				userID: uuid.New(),
+				limit: 1,
+				offset: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckProjectOwnership", a.ctx, a.userID, a.projectID).Return(true, nil).Once()
+				m.On("GetProjectGroups", a.ctx, a.userID, a.projectID, a.limit, a.offset).Return([]*entity.Group{{ID: 1}}, nil).Once()
+			},
+			want: []*entity.Group{{ID: 1}},
+			wantErr: false,
+		},
+		{
+			name: "permission error",
+			args: args{
+				ctx: context.Background(),
+				projectID: 1,
+				userID: uuid.New(),
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckProjectOwnership", a.ctx, a.userID, a.projectID).Return(true, errors.New("permission error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+		{
+			name: "permission denied",
+			args: args{
+				ctx: context.Background(),
+				projectID: 1,
+				userID: uuid.New(),
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckProjectOwnership", a.ctx, a.userID, a.projectID).Return(false, nil).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+		{
+			name: "db error",
+			args: args{
+				ctx: context.Background(),
+				projectID: 1,
+				userID: uuid.New(),
+				limit: 1,
+				offset: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckProjectOwnership", a.ctx, a.userID, a.projectID).Return(true, nil).Once()
+				m.On("GetProjectGroups", a.ctx, a.userID, a.projectID, a.limit, a.offset).Return(nil, errors.New("db error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			Log: log,
+			DB: mockStorage,
+		}
+
+		got, err := u.GetProjectGroups(tt.args.ctx, tt.args.projectID, tt.args.userID, tt.args.limit, tt.args.offset)
+
+		if tt.wantErr {
+			require.Error(t, err)
+			require.Empty(t, got)
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		}
+	}
+}

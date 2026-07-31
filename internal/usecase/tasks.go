@@ -166,26 +166,6 @@ func (u *UseCase) GetTask(ctx context.Context, taskID int64, userID uuid.UUID) (
 	return task, nil
 }
 
-func (u *UseCase) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.UUID, limit, offset uint64) ([]*entity.Task, error) {
-	const op = "usecase.GetGroupTasks"
-
-	ok, err := u.DB.CheckGroupOwnership(ctx, userID, groupID)
-	if !ok || err != nil {
-		u.Log.Warn("permission denied", "op", op, "error", err)
-
-		return nil, response.ErrPermissionDenied
-	}
-	
-	tasks, err := u.DB.GetGroupTasks(ctx, groupID, userID, limit, offset)
-	if err != nil {
-		u.Log.Error("error getting group tasks", "op", op, "error", err)
-
-		return nil, err
-	}
-
-	return tasks, nil
-}
-
 func (u *UseCase) GetListTask(ctx context.Context, taskFilter entity.TasksFilter) ([]*entity.Task, error) {
 	const op = "usecase.GetTasks"
 

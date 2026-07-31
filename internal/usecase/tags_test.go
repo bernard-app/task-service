@@ -182,6 +182,297 @@ func TestUseCase_UpdateTag(t *testing.T) {
 	}
 }
 
+func TestUseCase_DeleteTag(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		userID uuid.UUID
+		tagsID int64
+	}
+
+	tests := []struct {
+		name string
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				tagsID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("DeleteTag", a.ctx, a.tagsID, a.userID).Return(nil).Once()
+			},
+			wantErr: false,
+		},
+		{
+			name: "db error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				tagsID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("DeleteTag", a.ctx, a.tagsID, a.userID).Return(errors.New("db error")).Once()
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			DB: mockStorage,
+		}
+
+		err := u.DeleteTag(tt.args.ctx, tt.args.tagsID, tt.args.userID)
+
+		if tt.wantErr {
+			require.Error(t, err)
+		} else {
+			require.NoError(t, err)
+		}
+	}
+}
+
+func TestUseCase_GetTag(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		userID uuid.UUID
+		tagID int64
+	}
+
+	tests := []struct {
+		name string
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		want *entity.Tag
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				tagID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("GetTag", a.ctx, a.tagID, a.userID).Return(&entity.Tag{ID: 1}, nil).Once()
+			},
+			want: &entity.Tag{ID: 1},
+			wantErr: false,
+		},
+		{
+			name: "db error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				tagID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("GetTag", a.ctx, a.tagID, a.userID).Return(nil, errors.New("db error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			DB: mockStorage,
+		}
+
+		got, err := u.GetTag(tt.args.ctx, tt.args.tagID, tt.args.userID)
+
+		if tt.wantErr {
+			require.Error(t, err)
+			require.Empty(t, got)
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		}
+	}
+}
+
+func TestUseCase_GetTagList(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		userID uuid.UUID
+		projectID int64
+		limit uint64
+		offset uint64
+	}
+
+	tests := []struct {
+		name string
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		want []*entity.Tag
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				projectID: 1,
+				limit: 1,
+				offset: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("GetTagList", a.ctx, a.userID, a.projectID, a.limit, a.offset).Return([]*entity.Tag{{ID: 1}}, nil).Once()
+			},
+			want: []*entity.Tag{{ID: 1}},
+			wantErr: false,
+		},
+		{
+			name: "db error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				projectID: 1,
+				limit: 1,
+				offset: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("GetTagList", a.ctx, a.userID, a.projectID, a.limit, a.offset).Return(nil, errors.New("db error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			DB: mockStorage,
+		}
+
+		got, err := u.GetTagList(tt.args.ctx, tt.args.userID, tt.args.projectID, tt.args.limit, tt.args.offset)
+
+		if tt.wantErr {
+			require.Error(t, err)
+			require.Empty(t, got)
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		}
+	}
+}
+
+func TestUseCase_GetTaskTags(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		userID uuid.UUID
+		taskID int64
+	}
+
+	tests := []struct {
+		name string
+		args args
+		mockSetup func(m *mocks.MockStorage, a args)
+		want []*entity.Tag
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(true, nil).Once()
+				m.On("GetTaskTags", a.ctx, a.taskID).Return([]*entity.Tag{{ID: 1}}, nil).Once()
+			},
+			want: []*entity.Tag{{ID: 1}},
+			wantErr: false,
+		},
+		{
+			name: "permission error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(true, errors.New("permission error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+		{
+			name: "permission denied",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(false, nil).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+		{
+			name: "db error",
+			args: args{
+				ctx: context.Background(),
+				userID: uuid.New(),
+				taskID: 1,
+			},
+			mockSetup: func(m *mocks.MockStorage, a args) {
+				m.On("CheckTaskOwnership", a.ctx, a.userID, a.taskID).Return(true, nil).Once()
+				m.On("GetTaskTags", a.ctx, a.taskID).Return(nil, errors.New("db error")).Once()
+			},
+			want: nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		mockStorage := mocks.NewMockStorage(t)
+
+		if tt.mockSetup != nil {
+			tt.mockSetup(mockStorage, tt.args)
+		}
+
+		u := usecase.UseCase{
+			Log: log,
+			DB: mockStorage,
+		}
+
+		got, err := u.GetTaskTags(tt.args.ctx, tt.args.userID, tt.args.taskID)
+
+		if tt.wantErr {
+			require.Error(t, err)
+			require.Empty(t, got)
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		}
+	}
+}
+
 func TestUseCase_AddTagsTotask(t *testing.T) {
 	type args struct {
 		ctx context.Context
