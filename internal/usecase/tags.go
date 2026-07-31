@@ -30,7 +30,7 @@ func (u *UseCase) CreateTag(ctx context.Context, tag entity.Tag) (*entity.Tag, e
 
 func (u *UseCase) UpdateTag(ctx context.Context, tagID int64, tagName, tagColor *string, userID uuid.UUID) (*entity.Tag, error) {
 	const op = "usecase.UpdateTag"
-
+	
 	if tagColor != nil {
 		if !strings.HasPrefix(*tagColor, "#") || len(*tagColor) != 7 {
 			return nil, response.ErrInvalidArgument

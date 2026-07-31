@@ -97,10 +97,8 @@ func (t *TaskHandler) GetGroup(ctx context.Context, req *taskv1.GetGroupRequest)
 	}
 	
 	groupID := req.GetGroupId()
-	limit := req.GetLimit()
-	offset := req.GetOffset()
 
-	group, err := t.uc.GetGroup(ctx, groupID, userID, limit, offset)
+	group, err := t.uc.GetGroup(ctx, groupID, userID)
 	if err != nil {
 		return nil, HandleError(err)
 	}

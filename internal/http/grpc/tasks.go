@@ -190,28 +190,6 @@ func (t *TaskHandler) GetListTask(ctx context.Context, req *taskv1.GetListTaskRe
 	}, nil
 }
 
-func (t *TaskHandler) GetGroupTasks(ctx context.Context, req *taskv1.GetGroupTasksRequest) (*taskv1.GetGroupTasksResponse, error) {
-	userID, err := extractUserID(ctx)
-	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
-	}
-
-	tasks, err := t.uc.GetGroupTasks(ctx, req.GetGroupId(), userID, req.GetLimit(), req.GetOffset())
-	if err != nil {
-		return nil, HandleError(err)
-	}
-
-	var grpcTasks []*taskv1.Task
-
-	for _, task := range tasks {
-		grpcTasks = append(grpcTasks, mapTask(task))
-	}
-
-	return &taskv1.GetGroupTasksResponse{
-		Tasks: grpcTasks,
-	}, nil
-}
-
 func (t *TaskHandler) ArchiveTask(ctx context.Context, req *taskv1.ArchiveTaskRequest) (*taskv1.ArchiveTaskResponse, error) {
 	userID, err := extractUserID(ctx)
 	if err != nil {

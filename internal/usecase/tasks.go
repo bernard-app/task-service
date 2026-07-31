@@ -60,7 +60,9 @@ func HasBaseUpdates(req entity.UpdateTaskRequest) bool {
 		req.Description != nil ||
 		req.Priority != nil ||
 		req.Status != nil ||
-		req.Deadline != nil
+		req.Deadline != nil ||
+		req.GroupID != nil ||
+		req.ProjectID != nil
 }
 
 func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest, userID uuid.UUID, taskID int64) (*entity.Task, error) {
@@ -95,7 +97,7 @@ func (u *UseCase) UpdateTask(ctx context.Context, task entity.UpdateTaskRequest,
 				return err
 			}
 		} else {
-			updatedTask, err = u.DB.GetTask(ctx, taskID, userID)
+			updatedTask, err = u.DB.GetTask(ctxTx, taskID, userID)
 			if err != nil {
 				return err
 			}
@@ -164,35 +166,6 @@ func (u *UseCase) GetTask(ctx context.Context, taskID int64, userID uuid.UUID) (
 	return task, nil
 }
 
-func (u *UseCase) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.UUID, limit, offset uint64) ([]*entity.Task, error) {
-	const op = "usecase.GetGroupTasks"
-
-	ok, err := u.DB.CheckGroupOwnership(ctx, userID, groupID)
-	if !ok || err != nil {
-		u.Log.Warn("permission denied", "op", op, "error", err)
-
-		return nil, response.ErrPermissionDenied
-	}
-	
-	tasks, err := u.DB.GetGroupTasks(ctx, groupID, userID, limit, offset)
-	if err != nil {
-		u.Log.Error("error getting group tasks", "op", op, "error", err)
-
-		return nil, err
-	}
-
-	for _, task := range tasks {
-		task.Tags, err = u.DB.GetTaskTags(ctx, task.ID)
-		if err != nil {
-			u.Log.Error("error gettig task tags", "op", op, "error", err)
-
-			return nil, err
-		}
-	}
-	
-	return tasks, nil
-}
-
 func (u *UseCase) GetListTask(ctx context.Context, taskFilter entity.TasksFilter) ([]*entity.Task, error) {
 	const op = "usecase.GetTasks"
 
@@ -215,14 +188,14 @@ func (u *UseCase) GetListTask(ctx context.Context, taskFilter entity.TasksFilter
 		taskFilter.FilterType = entity.TagFilter
 	} 
 
-	if taskFilter.From != nil {
-		if taskFilter.To != nil {
-			taskFilter.FilterType = entity.DateFilter
-		} else {
-			return nil, response.ErrInvalidArgument
-		}
+	if (taskFilter.From != nil && taskFilter.To == nil) || (taskFilter.From == nil && taskFilter.To != nil) {
+		return nil, response.ErrInvalidArgument
 	}
 
+	if taskFilter.From != nil && taskFilter.To != nil {
+		taskFilter.FilterType = entity.DateFilter
+	}
+	
 	switch taskFilter.FilterType {
 	case entity.TagFilter:
 		tasks, err = u.DB.GetTasksByTag(ctx, taskFilter.UserID, *taskFilter.Tag, taskFilter.Limit, taskFilter.Offset)
@@ -268,4 +241,14 @@ func (u *UseCase) ArchiveTask(ctx context.Context, userID uuid.UUID, id int64) (
 	}
 
 	return task, err
+}
+
+func extractTaskID(tasks []*entity.Task) []int64 {
+	ids := make([]int64, 0, len(tasks))
+
+	for _, task := range tasks {
+		ids = append(ids, task.ID)
+	}
+
+	return ids
 }

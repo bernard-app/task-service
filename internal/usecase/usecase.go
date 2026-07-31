@@ -31,6 +31,7 @@ type Storage interface {
 	GetTasksByTag(ctx context.Context, userID uuid.UUID, tagID int64, limit, offset uint64) ([]*entity.Task, error)
 	GetGroupTasks(ctx context.Context, groupID int64, userID uuid.UUID, limit, offset uint64) ([]*entity.Task, error)
 	CheckTaskOwnership(ctx context.Context, userID uuid.UUID, taskID int64) (bool, error)
+	GetTasksByGroupIDs(ctx context.Context, groupdIDs []int64) ([]*entity.Task, error)
 	
 	CreateTag(ctx context.Context, tag entity.Tag) (*entity.Tag, error)
 	UpdateTag(ctx context.Context, tagID int64, name *string, color *string, userID uuid.UUID) (*entity.Tag, error)
@@ -42,6 +43,7 @@ type Storage interface {
 	RemoveTagsFromTask(ctx context.Context, tagsIDs []int64, taskID int64) error
 	RemoveAllTagsFromTask(ctx context.Context, taskID int64) error
 	CheckTagOwnership(ctx context.Context, userID uuid.UUID, tagID int64) (bool, error)
+	GetTagsByTaskIDs(ctx context.Context, taskIDs []int64) ([]*entity.Tag, error)
 	
 	CreateProject(ctx context.Context, project entity.Project) (*entity.Project, error)
 	UpdateProject(ctx context.Context, project entity.UpdateProjectRequest, projectID int64, userID uuid.UUID) (*entity.Project, error)

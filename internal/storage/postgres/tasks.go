@@ -373,6 +373,48 @@ func (s *Storage) GetGroupTasks(ctx context.Context, groupID int64, userID uuid.
 	return tasks, nil
 }
 
+func (s *Storage) GetTasksByGroupIDs(ctx context.Context, groupIDs []int64) ([]*entity.Task, error) {
+	const op = "storage.GetTasksByGroupIDs"
+
+	if len(groupIDs) == 0 {
+		return []*entity.Task{}, nil
+	}
+	
+	tx := s.getEngine(ctx)
+
+	query, args, err := sq.
+		Select("id", "name", "group_id").
+		From("tasks").
+		Where(sq.Eq{"group_id": groupIDs}).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+
+	if err != nil {
+		return nil, fmt.Errorf("operation: %s. cannot build query: %w", op, err)
+	}
+
+	rows, err := tx.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("cannot exec query: %w", err)
+	}
+	defer rows.Close()
+
+	var tasks []*entity.Task
+	
+	for rows.Next() {
+		var t entity.Task
+
+		err := rows.Scan(&t.ID, &t.Name, &t.GroupID)
+		if err != nil {
+			return nil, fmt.Errorf("operation: %s. cannot scan task: %w", op, err)
+		}
+
+		tasks = append(tasks, &t)
+	}
+
+	return tasks, nil
+}
+
 func (s *Storage) ArchiveTask(ctx context.Context, userID uuid.UUID, taskID int64) (*entity.Task, error) {
 	const op = "storage.ArchiveTask"
 

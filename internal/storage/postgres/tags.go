@@ -206,6 +206,48 @@ func (s *Storage) GetTagList(ctx context.Context, userID uuid.UUID, projectID in
 	return tags, nil
 }
 
+func (s *Storage) GetTagsByTaskIDs(ctx context.Context, taskIDs []int64) ([]*entity.Tag, error) {
+	const op = "storage.GetTagsByTaskIDs"
+
+	if len(taskIDs) == 0 {
+		return []*entity.Tag{}, nil
+	}
+
+	tx := s.getEngine(ctx)
+
+	query, args, err := sq.
+		Select("t.id", "t.name", "tt.task_id").
+		From("tags t").
+		Join("tasks_tags tt ON t.id = tt.tag_id").
+		Where(sq.Eq{"tt.task_id": taskIDs}).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+
+	if err != nil {
+		return nil, fmt.Errorf("operation: %s. cannot build query: %w", op, err)
+	}
+
+	rows, err := tx.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("operation: %s. cannot exec query: %w", op, err)
+	}
+	defer rows.Close()
+
+	var tags []*entity.Tag
+	for rows.Next() {
+		var t entity.Tag
+
+		err := rows.Scan(&t.ID, &t.Name, &t.TaskID)
+		if err != nil {
+			return nil, fmt.Errorf("operation: %s. cannot scan tag: %w", op, err)
+		}
+
+		tags = append(tags, &t)
+	}
+
+	return tags, nil
+}
+
 func (s *Storage) GetTaskTags(ctx context.Context, taskID int64) ([]*entity.Tag, error) {
 	const op = "storage.GetTaskTags"
 

@@ -60,6 +60,7 @@ type Tag struct {
 	Color     string    `json:"color"`
 	UserID    uuid.UUID `json:"user_id"`
 	ProjectID int64     `json:"project_id"`
+	TaskID    int64     `json:"task_id"`
 }
 
 type UserTasksTab struct {
